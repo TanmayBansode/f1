@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import Image from "next/image";
 import { defaultSeason, loadSeason, getSeasonSync, manifest } from "../../data";
 import type { SeasonData } from "@/lib/types";
 import type { BumpChartHandle } from "./BumpChart";
@@ -144,9 +145,16 @@ export default function BumpChartPage() {
             href="https://www.formula1.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-lg sm:text-xl font-black tracking-tighter text-[#E10600] hover:text-[#ff1a0e] transition-colors"
+            className="hover:opacity-80 transition-opacity"
           >
-            F1
+            <Image
+              src="/f1logo.png"
+              alt="F1"
+              width={48}
+              height={20}
+              className="h-5 w-auto"
+              unoptimized
+            />
           </a>
           <div className="w-px h-5 bg-neutral-800" />
           <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em]">
