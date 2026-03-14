@@ -1,0 +1,121 @@
+Track,Position,No,Driver,Team,Starting Grid,Laps,Time/Retired,Points
+China,1,44,Lewis Hamilton,Ferrari,1,19,30:39.965,8
+China,2,81,Oscar Piastri,McLaren Mercedes,3,19,+6.889,7
+China,3,1,Max Verstappen,Red Bull Racing Honda RBPT,2,19,+9.804,6
+China,4,63,George Russell,Mercedes,5,19,+11.592,5
+China,5,16,Charles Leclerc,Ferrari,4,19,+12.190,4
+China,6,22,Yuki Tsunoda,Racing Bulls Honda RBPT,8,19,+22.288,3
+China,7,12,Kimi Antonelli,Mercedes,7,19,+23.038,2
+China,8,4,Lando Norris,McLaren Mercedes,6,19,+23.471,1
+China,9,18,Lance Stroll,Aston Martin Aramco Mercedes,10,19,+24.916,0
+China,10,14,Fernando Alonso,Aston Martin Aramco Mercedes,11,19,+38.218,0
+China,11,23,Alexander Albon,Williams Mercedes,9,19,+39.292,0
+China,12,10,Pierre Gasly,Alpine Renault,17,19,+39.649,0
+China,13,6,Isack Hadjar,Racing Bulls Honda RBPT,15,19,+42.400,0
+China,14,30,Liam Lawson,Red Bull Racing Honda RBPT,19,19,+44.904,0
+China,15,87,Oliver Bearman,Haas Ferrari,12,19,+45.649,0
+China,16,31,Esteban Ocon,Haas Ferrari,18,19,+46.182,0
+China,17,55,Carlos Sainz,Williams Mercedes,13,19,+51.376,0
+China,18,5,Gabriel Bortoleto,Kick Sauber Ferrari,14,19,+53.940,0
+China,19,27,Nico Hulkenberg,Kick Sauber Ferrari,20,19,+56.682,0
+China,20,7,Jack Doohan,Alpine Renault,16,19,+70.212,0
+Miami,1,4,Lando Norris,McLaren Mercedes,3,18,36:37.647,8
+Miami,2,81,Oscar Piastri,McLaren Mercedes,2,18,+0.672,7
+Miami,3,44,Lewis Hamilton,Ferrari,7,18,+1.073,6
+Miami,4,63,George Russell,Mercedes,5,18,+3.127,5
+Miami,5,18,Lance Stroll,Aston Martin Aramco Mercedes,16,18,+3.412,4
+Miami,6,22,Yuki Tsunoda,Red Bull Racing Honda RBPT,20,18,+5.153,3
+Miami,7,12,Kimi Antonelli,Mercedes,1,18,+5.635,2
+Miami,8,10,Pierre Gasly,Alpine Renault,13,18,+5.973,1
+Miami,9,27,Nico Hulkenberg,Kick Sauber Ferrari,11,18,+6.153,0
+Miami,10,6,Isack Hadjar,Racing Bulls Honda RBPT,9,18,+7.502,0
+Miami,11,23,Alexander Albon,Williams Mercedes,8,18,+7.522,0
+Miami,12,31,Esteban Ocon,Haas Ferrari,12,18,+8.998,0
+Miami,13,30,Liam Lawson,Racing Bulls Honda RBPT,14,18,+9.024,0
+Miami,14,87,Oliver Bearman,Haas Ferrari,19,18,+9.218,0
+Miami,15,5,Gabriel Bortoleto,Kick Sauber Ferrari,18,18,+9.675,0
+Miami,16,7,Jack Doohan,Alpine Renault,17,18,+9.909,0
+Miami,17,1,Max Verstappen,Red Bull Racing Honda RBPT,4,18,+12.059,0
+Miami,NC,14,Fernando Alonso,Aston Martin Aramco Mercedes,10,13,DNF,0
+Miami,NC,55,Carlos Sainz,Williams Mercedes,15,12,DNF,0
+Miami,NC,16,Charles Leclerc,Ferrari,6,0,DNF,0
+Belgium,1,1,Max Verstappen,Red Bull Racing Honda RBPT,4,15,26:37.997,8
+Belgium,2,81,Oscar Piastri,McLaren Mercedes,1,15,+0.753,7
+Belgium,3,4,Lando Norris,McLaren Mercedes,2,15,+1.414,6
+Belgium,4,16,Charles Leclerc,Ferrari,3,15,+10.176,5
+Belgium,5,31,Esteban Ocon,Haas Ferrari,15,15,+13.789,4
+Belgium,6,55,Carlos Sainz,Williams Mercedes,18,15,+14.964,3
+Belgium,7,87,Oliver Bearman,Haas Ferrari,11,15,+18.610,2
+Belgium,8,6,Isack Hadjar,Racing Bulls Honda RBPT,20,15,+19.119,1
+Belgium,9,5,Gabriel Bortoleto,Kick Sauber Ferrari,9,15,+22.183,0
+Belgium,10,30,Liam Lawson,Racing Bulls Honda RBPT,8,15,+22.897,0
+Belgium,11,22,Yuki Tsunoda,Red Bull Racing Honda RBPT,13,15,+24.551,0
+Belgium,12,63,George Russell,Mercedes,5,15,+25.969,0
+Belgium,13,18,Lance Stroll,Aston Martin Aramco Mercedes,14,15,+26.595,0
+Belgium,14,14,Fernando Alonso,Aston Martin Aramco Mercedes,17,15,+29.046,0
+Belgium,15,44,Lewis Hamilton,Ferrari,7,15,+30.175,0
+Belgium,16,23,Alexander Albon,Williams Mercedes,6,15,+30.941,0
+Belgium,17,12,Kimi Antonelli,Mercedes,16,15,+31.981,0
+Belgium,18,27,Nico Hulkenberg,Kick Sauber Ferrari,12,15,+32.867,0
+Belgium,19,43,Franco Colapinto,Alpine Renault,19,15,+38.072,0
+Belgium,NC,10,Pierre Gasly,Alpine Renault,10,12,DNF,0
+United States,1,1,Max Verstappen,Red Bull Racing Honda RBPT,1,19,37:58.229,8
+United States,2,63,George Russell,Mercedes,5,19,+0.395,7
+United States,3,55,Carlos Sainz,Williams Mercedes,7,19,+0.791,6
+United States,4,44,Lewis Hamilton,Ferrari,8,19,+1.224,5
+United States,5,16,Charles Leclerc,Ferrari,10,19,+1.825,4
+United States,6,23,Alexander Albon,Williams Mercedes,9,19,+2.576,3
+United States,7,22,Yuki Tsunoda,Red Bull Racing Honda RBPT,18,19,+2.976,2
+United States,8,12,Kimi Antonelli,Mercedes,11,19,+4.147,1
+United States,9,30,Liam Lawson,Racing Bulls Honda RBPT,15,19,+4.804,0
+United States,10,10,Pierre Gasly,Alpine Renault,13,19,+5.126,0
+United States,11,5,Gabriel Bortoleto,Kick Sauber Ferrari,20,19,+5.649,0
+United States,12,6,Isack Hadjar,Racing Bulls Honda RBPT,12,19,+6.228,0
+United States,13,27,Nico Hulkenberg,Kick Sauber Ferrari,4,19,+6.624,0
+United States,14,43,Franco Colapinto,Alpine Renault,17,19,+8.006,0
+United States,15,87,Oliver Bearman,Haas Ferrari,16,19,+13.576,0
+United States,NC,31,Esteban Ocon,Haas Ferrari,19,15,DNF,0
+United States,NC,18,Lance Stroll,Aston Martin Aramco Mercedes,14,15,DNF,0
+United States,NC,4,Lando Norris,McLaren Mercedes,2,0,DNF,0
+United States,NC,81,Oscar Piastri,McLaren Mercedes,3,0,DNF,0
+United States,NC,14,Fernando Alonso,Aston Martin Aramco Mercedes,6,0,DNF,0
+Brazil,1,4,Lando Norris,McLaren Mercedes,1,24,53:25.928,8
+Brazil,2,12,Kimi Antonelli,Mercedes,2,24,+0.845,7
+Brazil,3,63,George Russell,Mercedes,4,24,+2.318,6
+Brazil,4,1,Max Verstappen,Red Bull Racing Honda RBPT,6,24,+4.423,5
+Brazil,5,16,Charles Leclerc,Ferrari,8,24,+16.483,4
+Brazil,6,14,Fernando Alonso,Aston Martin Aramco Mercedes,5,24,+18.306,3
+Brazil,7,44,Lewis Hamilton,Ferrari,11,24,+18.603,2
+Brazil,8,10,Pierre Gasly,Alpine Renault,13,24,+19.366,1
+Brazil,9,18,Lance Stroll,Aston Martin Aramco Mercedes,7,24,+23.933,0
+Brazil,10,6,Isack Hadjar,Racing Bulls Honda RBPT,9,24,+29.548,0
+Brazil,11,31,Esteban Ocon,Haas Ferrari,18,24,+31.000,0
+Brazil,12,87,Oliver Bearman,Haas Ferrari,15,24,+36.334,0
+Brazil,13,22,Yuki Tsunoda,Red Bull Racing Honda RBPT,19,24,+38.462,0
+Brazil,14,55,Carlos Sainz,Williams Mercedes,20,24,+38.951,0
+Brazil,15,27,Nico Hulkenberg,Kick Sauber Ferrari,10,24,+42.349,0
+Brazil,16,30,Liam Lawson,Racing Bulls Honda RBPT,17,24,+43.090,0
+Brazil,17,23,Alexander Albon,Williams Mercedes,12,24,+55.456,0
+Brazil,18,5,Gabriel Bortoleto,Kick Sauber Ferrari,14,23,DNF,0
+Brazil,NC,81,Oscar Piastri,McLaren Mercedes,3,5,DNF,0
+Brazil,NC,43,Franco Colapinto,Alpine Renault,16,5,DNF,0
+Qatar,1,81,Oscar Piastri,McLaren Mercedes,1,19,26:51.033,8
+Qatar,2,63,George Russell,Mercedes,2,19,+4.951,7
+Qatar,3,4,Lando Norris,McLaren Mercedes,3,19,+6.279,6
+Qatar,4,1,Max Verstappen,Red Bull Racing Honda RBPT,6,19,+9.054,5
+Qatar,5,22,Yuki Tsunoda,Red Bull Racing Honda RBPT,5,19,+19.327,4
+Qatar,6,12,Kimi Antonelli,Mercedes,7,19,+21.391,3
+Qatar,7,14,Fernando Alonso,Aston Martin Aramco Mercedes,4,19,+24.556,2
+Qatar,8,55,Carlos Sainz,Williams Mercedes,8,19,+27.333,1
+Qatar,9,6,Isack Hadjar,Racing Bulls Honda RBPT,11,19,+28.206,0
+Qatar,10,23,Alexander Albon,Williams Mercedes,10,19,+28.925,0
+Qatar,11,5,Gabriel Bortoleto,Kick Sauber Ferrari,13,19,+32.966,0
+Qatar,12,87,Oliver Bearman,Haas Ferrari,12,19,+34.529,0
+Qatar,13,16,Charles Leclerc,Ferrari,9,19,+35.182,
+Qatar,14,30,Liam Lawson,Racing Bulls Honda RBPT,16,19,+36.916,0
+Qatar,15,31,Esteban Ocon,Haas Ferrari,15,19,+38.838,0
+Qatar,16,27,Nico Hulkenberg,Kick Sauber Ferrari,14,19,+39.638,
+Qatar,17,44,Lewis Hamilton,Ferrari,18,19,+46.171,0
+Qatar,18,10,Pierre Gasly,Alpine Renault,19,19,+69.534,0
+Qatar,19,18,Lance Stroll,Aston Martin Aramco Mercedes,17,19,+77.960,0
+Qatar,20,43,Franco Colapinto,Alpine Renault,20,19,+80.804,0
