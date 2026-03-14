@@ -157,8 +157,8 @@ export default function BumpChartPage() {
             />
           </a>
           <div className="w-px h-5 bg-neutral-800" />
-          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em]">
-            Standings Tracker
+          <span className="text-[20px] font-bold text-neutral-500 uppercase tracking-[0.2em]">
+            Podiums
           </span>
           <span className="text-[10px] text-neutral-700 font-medium ml-1">
             {activeSeason}
