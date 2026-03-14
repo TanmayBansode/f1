@@ -23,7 +23,16 @@ export interface Driver {
   teamId: string;
   teamColor: string;
   number: number;
+  photo?: string;
   results: RaceResult[];
+}
+
+export interface TeamMeta {
+  id: string;
+  name: string;
+  color: string;
+  abbr: string;
+  logo: string;
 }
 
 export interface DriverReplacement {
@@ -36,6 +45,7 @@ export interface SeasonData {
   year: number;
   races: Race[];
   drivers: Driver[];
+  teams?: TeamMeta[];
   driverReplacements?: DriverReplacement[];
 }
 
@@ -44,7 +54,7 @@ export interface SeasonManifest {
   defaultYear: number;
 }
 
-export type DisplayState = "racing" | "dnf" | "dsq" | "bench";
+export type DisplayState = "racing" | "dnf" | "dsq" | "bench" | "dns";
 
 export interface HoverInfo {
   driverId: string;

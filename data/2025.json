@@ -21624,7 +21624,8 @@
           "fastestLapTime": "1:26.818",
           "cumulativePoints": 423
         }
-      ]
+      ],
+      "photo": "/drivers/nor.png"
     },
     {
       "id": "VER",
@@ -22045,7 +22046,8 @@
           "fastestLapTime": "1:27.625",
           "cumulativePoints": 421
         }
-      ]
+      ],
+      "photo": "/drivers/ver.png"
     },
     {
       "id": "PIA",
@@ -22472,7 +22474,8 @@
           "fastestLapTime": "1:26.765",
           "cumulativePoints": 410
         }
-      ]
+      ],
+      "photo": "/drivers/pia.png"
     },
     {
       "id": "RUS",
@@ -22893,7 +22896,8 @@
           "fastestLapTime": "1:28.599",
           "cumulativePoints": 319
         }
-      ]
+      ],
+      "photo": "/drivers/rus.png"
     },
     {
       "id": "LEC",
@@ -23316,7 +23320,8 @@
           "setFastestLap": true,
           "cumulativePoints": 242
         }
-      ]
+      ],
+      "photo": "/drivers/lec.png"
     },
     {
       "id": "HAM",
@@ -23739,7 +23744,8 @@
           "fastestLapTime": "1:28.094",
           "cumulativePoints": 156
         }
-      ]
+      ],
+      "photo": "/drivers/ham.png"
     },
     {
       "id": "ANT",
@@ -24163,7 +24169,8 @@
           "fastestLapTime": "1:28.029",
           "cumulativePoints": 150
         }
-      ]
+      ],
+      "photo": "/drivers/ant.png"
     },
     {
       "id": "ALB",
@@ -24586,7 +24593,8 @@
           "fastestLapTime": "1:28.367",
           "cumulativePoints": 73
         }
-      ]
+      ],
+      "photo": "/drivers/alb.png"
     },
     {
       "id": "SAI",
@@ -25007,7 +25015,8 @@
           "fastestLapTime": "1:29.052",
           "cumulativePoints": 64
         }
-      ]
+      ],
+      "photo": "/drivers/sai.png"
     },
     {
       "id": "ALO",
@@ -25432,7 +25441,8 @@
           "fastestLapTime": "1:28.279",
           "cumulativePoints": 56
         }
-      ]
+      ],
+      "photo": "/drivers/alo.png"
     },
     {
       "id": "HUL",
@@ -25853,7 +25863,8 @@
           "fastestLapTime": "1:27.050",
           "cumulativePoints": 51
         }
-      ]
+      ],
+      "photo": "/drivers/hul.png"
     },
     {
       "id": "HAD",
@@ -26272,7 +26283,8 @@
           "fastestLapTime": "1:29.375",
           "cumulativePoints": 51
         }
-      ]
+      ],
+      "photo": "/drivers/had.png"
     },
     {
       "id": "BEA",
@@ -26693,7 +26705,8 @@
           "fastestLapTime": "1:28.976",
           "cumulativePoints": 41
         }
-      ]
+      ],
+      "photo": "/drivers/bea.png"
     },
     {
       "id": "OCO",
@@ -27113,7 +27126,8 @@
           "fastestLapTime": "1:28.655",
           "cumulativePoints": 38
         }
-      ]
+      ],
+      "photo": "/drivers/oco.png"
     },
     {
       "id": "LAW",
@@ -27535,7 +27549,8 @@
           "fastestLapTime": "1:28.886",
           "cumulativePoints": 38
         }
-      ]
+      ],
+      "photo": "/drivers/law.png"
     },
     {
       "id": "STR",
@@ -27946,7 +27961,8 @@
           "fastestLapTime": "1:27.626",
           "cumulativePoints": 33
         }
-      ]
+      ],
+      "photo": "/drivers/str.png"
     },
     {
       "id": "TSU",
@@ -28364,7 +28380,8 @@
           "fastestLapTime": "1:28.557",
           "cumulativePoints": 33
         }
-      ]
+      ],
+      "photo": "/drivers/tsu.png"
     },
     {
       "id": "GAS",
@@ -28785,7 +28802,8 @@
           "fastestLapTime": "1:27.767",
           "cumulativePoints": 22
         }
-      ]
+      ],
+      "photo": "/drivers/gas.png"
     },
     {
       "id": "BOR",
@@ -29200,7 +29218,8 @@
           "fastestLapTime": "1:29.114",
           "cumulativePoints": 19
         }
-      ]
+      ],
+      "photo": "/drivers/bor.png"
     },
     {
       "id": "DOO",
@@ -29318,7 +29337,8 @@
           "status": "DNF",
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/doo.png"
     },
     {
       "id": "COL",
@@ -29629,7 +29649,8 @@
           "fastestLapTime": "1:27.710",
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/col.png"
     }
   ],
   "constructors": [
@@ -29699,6 +29720,78 @@
       "out": "DOO",
       "in": "COL",
       "atRound": 17
+    }
+  ],
+  "teams": [
+    {
+      "id": "mercedes",
+      "name": "Mercedes",
+      "color": "#27F4D2",
+      "abbr": "MER",
+      "logo": "/teams/mercedes.png"
+    },
+    {
+      "id": "ferrari",
+      "name": "Ferrari",
+      "color": "#E8002D",
+      "abbr": "FER",
+      "logo": "/teams/ferrari.png"
+    },
+    {
+      "id": "mclaren",
+      "name": "McLaren",
+      "color": "#FF8000",
+      "abbr": "MCL",
+      "logo": "/teams/mclaren.png"
+    },
+    {
+      "id": "red-bull",
+      "name": "Red Bull Racing",
+      "color": "#3671C6",
+      "abbr": "RBR",
+      "logo": "/teams/red-bull.png"
+    },
+    {
+      "id": "haas",
+      "name": "Haas",
+      "color": "#B6BABD",
+      "abbr": "HAS",
+      "logo": "/teams/haas.png"
+    },
+    {
+      "id": "racing-bulls",
+      "name": "Racing Bulls",
+      "color": "#6692FF",
+      "abbr": "RCB",
+      "logo": "/teams/racing-bulls.png"
+    },
+    {
+      "id": "sauber",
+      "name": "Sauber",
+      "color": "#52E252",
+      "abbr": "SAU",
+      "logo": "/teams/sauber.png"
+    },
+    {
+      "id": "alpine",
+      "name": "Alpine",
+      "color": "#FF87BC",
+      "abbr": "ALP",
+      "logo": "/teams/alpine.png"
+    },
+    {
+      "id": "williams",
+      "name": "Williams",
+      "color": "#1868DB",
+      "abbr": "WIL",
+      "logo": "/teams/williams.png"
+    },
+    {
+      "id": "aston-martin",
+      "name": "Aston Martin",
+      "color": "#229971",
+      "abbr": "AMR",
+      "logo": "/teams/aston-martin.png"
     }
   ]
 }

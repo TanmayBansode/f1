@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "d3": "^7.9.0",
     "d3-scale": "^4.0.2",
     "d3-selection": "^3.0.0",

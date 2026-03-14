@@ -13,7 +13,7 @@ import { scalePoint, scaleLinear } from "d3-scale";
 import { line, curveBumpX } from "d3-shape";
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from "d3-zoom";
 import "d3-transition";
-import type {
+import {
   SeasonData,
   Driver,
   RaceResult,
@@ -23,7 +23,6 @@ import type {
   RaceTypeFilter,
   DisplayState,
 } from "@/lib/types";
-import { DRIVER_PHOTO_MAP } from "@/lib/driverPhotos";
 
 const MARGIN = { top: 60, right: 80, bottom: 30, left: 50 };
 const ROW_HEIGHT = 36;
@@ -54,6 +53,7 @@ interface BumpChartProps {
 function getDisplayState(result: RaceResult): DisplayState {
   if (result.status === "DSQ") return "dsq";
   if (result.status === "DNF") return "dnf";
+  if (result.status === "DNS") return "dns";
   if (result.position === null) return "bench";
   return "racing";
 }
@@ -179,7 +179,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     const defs = svg.append("defs");
     if (displayMode === "photo") {
       season.drivers.forEach((driver) => {
-        const photoFile = DRIVER_PHOTO_MAP[driver.id];
+        const photoPath = driver.photo;
         const patternId = `photo-${driver.id}`;
         const pattern = defs
           .append("pattern")
@@ -188,10 +188,10 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
           .attr("height", 1)
           .attr("patternContentUnits", "objectBoundingBox");
 
-        if (photoFile) {
+        if (photoPath) {
           pattern
             .append("image")
-            .attr("href", `/drivers/${photoFile}`)
+            .attr("href", photoPath)
             .attr("width", 1)
             .attr("height", 1)
             .attr("preserveAspectRatio", "xMidYMid slice");
@@ -494,8 +494,13 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         })
     );
 
-    const hoverHandler = (
-      event: MouseEvent,
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    let longPressFired = false;
+
+    const showTooltip = (
+      clientX: number,
+      clientY: number,
       d: {
         driver: Driver;
         result: RaceResult;
@@ -506,8 +511,8 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       const container = containerRef.current;
       if (!container) return;
       const rect = container.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
       const race = season.races.find((r) => r.round === d.result.round);
       onHoverRef.current({
         driverId: d.driver.id,
@@ -525,8 +530,102 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       });
     };
 
-    const hoverLeave = () => {
+    const hideTooltip = () => {
       onHoverRef.current(null);
+    };
+
+    const clearLongPress = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+
+    // Shared function to attach all interaction handlers to any node group
+    const attachNodeInteraction = (
+      nodeGroups: ReturnType<typeof g.selectAll<SVGGElement, (typeof dots)[0]>>,
+      scaleUpTransform: (d: (typeof dots)[0]) => string,
+      defaultTransform: (d: (typeof dots)[0]) => string,
+      scaleElement?: string // e.g. ".node-shape" for dot mode
+    ) => {
+      // Desktop: hover shows tooltip, mouseleave hides
+      nodeGroups
+        .on("mouseenter", function (event, d) {
+          if (isTouchDevice) return; // skip on touch — handled by long press
+          if (scaleElement) {
+            select(this)
+              .select(scaleElement)
+              .transition().duration(100)
+              .attr("transform", "scale(1.3)");
+          } else {
+            select(this)
+              .transition().duration(100)
+              .attr("transform", scaleUpTransform(d));
+          }
+          showTooltip(event.clientX, event.clientY, d);
+        })
+        .on("mouseleave", function (_, d) {
+          if (isTouchDevice) return;
+          if (scaleElement) {
+            select(this)
+              .select(scaleElement)
+              .transition().duration(100)
+              .attr("transform", "scale(1)");
+          } else {
+            select(this)
+              .transition().duration(100)
+              .attr("transform", defaultTransform(d));
+          }
+          hideTooltip();
+        })
+        .on("click", function (_, d) {
+          // On touch devices, tap = select driver (no tooltip)
+          // On desktop, click = select driver (tooltip already showing from hover)
+          if (isTouchDevice && longPressFired) {
+            // Long press just fired — don't also select
+            longPressFired = false;
+            return;
+          }
+          onSelectDriverRef.current(d.driver.id);
+        });
+
+      // Touch: long press shows tooltip
+      if (isTouchDevice) {
+        nodeGroups.each(function (d) {
+          const el = this as SVGGElement;
+
+          el.addEventListener("touchstart", function (e) {
+            longPressFired = false;
+            const touch = e.touches[0];
+            longPressTimer = setTimeout(() => {
+              longPressFired = true;
+              showTooltip(touch.clientX, touch.clientY, d);
+              // Vibrate if supported
+              if (navigator.vibrate) navigator.vibrate(30);
+            }, 400);
+          }, { passive: true });
+
+          el.addEventListener("touchmove", function () {
+            clearLongPress();
+          }, { passive: true });
+
+          el.addEventListener("touchend", function () {
+            clearLongPress();
+            // Dismiss tooltip after a delay if it was shown
+            if (longPressFired) {
+              setTimeout(() => {
+                hideTooltip();
+                longPressFired = false;
+              }, 1500);
+            }
+          }, { passive: true });
+
+          el.addEventListener("touchcancel", function () {
+            clearLongPress();
+            hideTooltip();
+          }, { passive: true });
+        });
+      }
     };
 
     if (displayMode === "dot") {
@@ -550,7 +649,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr("stroke", "#0a0a0a")
         .attr("stroke-width", 2);
 
-      // DNF/DSQ cross overlay
+      // DNF/DSQ cross overlay (Red)
       nodeGroups
         .filter((d) => d.displayState === "dnf" || d.displayState === "dsq")
         .each(function () {
@@ -566,26 +665,28 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
             .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
 
+      // DNS cross overlay (Black)
       nodeGroups
-        .on("mouseenter", function (event, d) {
-          select(this)
-            .select(".node-shape")
-            .transition()
-            .duration(100)
-            .attr("transform", "scale(1.3)");
-          hoverHandler(event, d);
-        })
-        .on("mouseleave", function () {
-          select(this)
-            .select(".node-shape")
-            .transition()
-            .duration(100)
-            .attr("transform", "scale(1)");
-          hoverLeave();
-        })
-        .on("click", function (_, d) {
-          onSelectDriverRef.current(d.driver.id);
+        .filter((d) => d.displayState === "dns")
+        .each(function () {
+          const s = 6;
+          const el = select(this);
+          el.append("line")
+            .attr("x1", -s).attr("y1", -s).attr("x2", s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
+          el.append("line")
+            .attr("x1", s).attr("y1", -s).attr("x2", -s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
+
+      attachNodeInteraction(
+        nodeGroups,
+        () => "", // not used — dot uses scaleElement
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`,
+        ".node-shape"
+      );
     } else if (displayMode === "code") {
       const nodeGroups = g
         .selectAll<SVGGElement, (typeof dots)[0]>(".driver-node")
@@ -621,7 +722,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr("letter-spacing", "0.5px")
         .text((d) => d.driver.id);
 
-      // DNF/DSQ cross overlay
+      // DNF/DSQ cross overlay (Red)
       nodeGroups
         .filter((d) => d.displayState === "dnf" || d.displayState === "dsq")
         .each(function () {
@@ -637,30 +738,27 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
             .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
 
+      // DNS cross overlay (Black)
       nodeGroups
-        .on("mouseenter", function (event, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.2)`
-            );
-          hoverHandler(event, d);
-        })
-        .on("mouseleave", function (_, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
-            );
-          hoverLeave();
-        })
-        .on("click", function (_, d) {
-          onSelectDriverRef.current(d.driver.id);
+        .filter((d) => d.displayState === "dns")
+        .each(function () {
+          const s = 8;
+          const el = select(this);
+          el.append("line")
+            .attr("x1", -s).attr("y1", -s).attr("x2", s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
+          el.append("line")
+            .attr("x1", s).attr("y1", -s).attr("x2", -s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
+
+      attachNodeInteraction(
+        nodeGroups,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.2)`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+      );
     } else {
       // Photo mode
       const nodeGroups = g
@@ -690,7 +788,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr("fill", (d) => `url(#photo-${d.driver.id})`)
         .attr("stroke", "none");
 
-      // DNF/DSQ cross overlay
+      // DNF/DSQ cross overlay (Red)
       nodeGroups
         .filter((d) => d.displayState === "dnf" || d.displayState === "dsq")
         .each(function () {
@@ -706,30 +804,27 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
             .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
 
+      // DNS cross overlay (Black)
       nodeGroups
-        .on("mouseenter", function (event, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.25)`
-            );
-          hoverHandler(event, d);
-        })
-        .on("mouseleave", function (_, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
-            );
-          hoverLeave();
-        })
-        .on("click", function (_, d) {
-          onSelectDriverRef.current(d.driver.id);
+        .filter((d) => d.displayState === "dns")
+        .each(function () {
+          const s = 9;
+          const el = select(this);
+          el.append("line")
+            .attr("x1", -s).attr("y1", -s).attr("x2", s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
+          el.append("line")
+            .attr("x1", s).attr("y1", -s).attr("x2", -s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
+
+      attachNodeInteraction(
+        nodeGroups,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.25)`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+      );
     }
 
     // Driver end-of-line labels

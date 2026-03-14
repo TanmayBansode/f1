@@ -3,7 +3,7 @@
 @theme inline {
   --color-background: #0a0a0a;
   --color-foreground: #ededed;
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-outfit);
 }
 
 :root {
@@ -40,8 +40,11 @@ body {
   font-size: 11px;
 }
 
-svg text {
+svg {
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 
 /* Driver panel scrollbar */
@@ -74,4 +77,22 @@ svg text {
 .driver-row:hover {
   background-color: rgba(255, 255, 255, 0.04) !important;
   transform: translateX(2px);
+}
+
+/* Touch device overrides */
+@media (hover: none) {
+  .team-btn:hover {
+    transform: none;
+  }
+  .driver-row:hover {
+    transform: none;
+  }
+}
+
+/* Mobile axis text - smaller for readability */
+@media (max-width: 640px) {
+  .x-axis text,
+  .y-axis text {
+    font-size: 9px;
+  }
 }

@@ -1533,7 +1533,8 @@
           "points": 0,
           "cumulativePoints": 33
         }
-      ]
+      ],
+      "photo": "/drivers/rus.png"
     },
     {
       "id": "ANT",
@@ -1575,7 +1576,8 @@
           "points": 0,
           "cumulativePoints": 22
         }
-      ]
+      ],
+      "photo": "/drivers/ant.png"
     },
     {
       "id": "LEC",
@@ -1617,7 +1619,8 @@
           "points": 0,
           "cumulativePoints": 22
         }
-      ]
+      ],
+      "photo": "/drivers/lec.png"
     },
     {
       "id": "HAM",
@@ -1659,7 +1662,8 @@
           "points": 0,
           "cumulativePoints": 18
         }
-      ]
+      ],
+      "photo": "/drivers/ham.png"
     },
     {
       "id": "NOR",
@@ -1701,7 +1705,8 @@
           "points": 0,
           "cumulativePoints": 15
         }
-      ]
+      ],
+      "photo": "/drivers/nor.png"
     },
     {
       "id": "VER",
@@ -1738,7 +1743,8 @@
           "points": 0,
           "cumulativePoints": 8
         }
-      ]
+      ],
+      "photo": "/drivers/ver.png"
     },
     {
       "id": "BEA",
@@ -1780,7 +1786,8 @@
           "points": 0,
           "cumulativePoints": 7
         }
-      ]
+      ],
+      "photo": "/drivers/bea.png"
     },
     {
       "id": "LIN",
@@ -1823,7 +1830,8 @@
           "points": 0,
           "cumulativePoints": 4
         }
-      ]
+      ],
+      "photo": "/drivers/lin.png"
     },
     {
       "id": "PIA",
@@ -1865,13 +1873,14 @@
           "points": 0,
           "cumulativePoints": 3
         }
-      ]
+      ],
+      "photo": "/drivers/pia.png"
     },
     {
       "id": "BOR",
       "name": "Gabriel Bortoleto",
       "number": 5,
-      "team": "Sauber",
+      "team": "Audi",
       "teamId": "sauber",
       "teamColor": "#52E252",
       "results": [
@@ -1907,7 +1916,8 @@
           "points": 0,
           "cumulativePoints": 2
         }
-      ]
+      ],
+      "photo": "/drivers/bor.png"
     },
     {
       "id": "LAW",
@@ -1949,7 +1959,8 @@
           "points": 0,
           "cumulativePoints": 2
         }
-      ]
+      ],
+      "photo": "/drivers/law.png"
     },
     {
       "id": "GAS",
@@ -1991,7 +2002,8 @@
           "points": 0,
           "cumulativePoints": 1
         }
-      ]
+      ],
+      "photo": "/drivers/gas.png"
     },
     {
       "id": "OCO",
@@ -2033,7 +2045,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/oco.png"
     },
     {
       "id": "ALB",
@@ -2075,7 +2088,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/alb.png"
     },
     {
       "id": "COL",
@@ -2117,7 +2131,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/col.png"
     },
     {
       "id": "SAI",
@@ -2153,7 +2168,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/sai.png"
     },
     {
       "id": "PER",
@@ -2195,7 +2211,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/per.png"
     },
     {
       "id": "STR",
@@ -2232,7 +2249,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/str.png"
     },
     {
       "id": "ALO",
@@ -2275,7 +2293,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/alo.png"
     },
     {
       "id": "BOT",
@@ -2319,7 +2338,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/bot.png"
     },
     {
       "id": "HAD",
@@ -2362,13 +2382,14 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/had.png"
     },
     {
       "id": "HUL",
       "name": "Nico Hulkenberg",
       "number": 27,
-      "team": "Sauber",
+      "team": "Audi",
       "teamId": "sauber",
       "teamColor": "#52E252",
       "results": [
@@ -2405,7 +2426,8 @@
           "points": 0,
           "cumulativePoints": 0
         }
-      ]
+      ],
+      "photo": "/drivers/hul.png"
     }
   ],
   "constructors": [
@@ -2474,6 +2496,85 @@
       "id": "aston-martin",
       "color": "#229971",
       "points": 0
+    }
+  ],
+  "teams": [
+    {
+      "id": "mercedes",
+      "name": "Mercedes",
+      "color": "#27F4D2",
+      "abbr": "MER",
+      "logo": "/teams/mercedes.png"
+    },
+    {
+      "id": "ferrari",
+      "name": "Ferrari",
+      "color": "#E8002D",
+      "abbr": "FER",
+      "logo": "/teams/ferrari.png"
+    },
+    {
+      "id": "mclaren",
+      "name": "McLaren",
+      "color": "#FF8000",
+      "abbr": "MCL",
+      "logo": "/teams/mclaren.png"
+    },
+    {
+      "id": "red-bull",
+      "name": "Red Bull Racing",
+      "color": "#3671C6",
+      "abbr": "RBR",
+      "logo": "/teams/red-bull.png"
+    },
+    {
+      "id": "haas",
+      "name": "Haas",
+      "color": "#B6BABD",
+      "abbr": "HAS",
+      "logo": "/teams/haas.png"
+    },
+    {
+      "id": "racing-bulls",
+      "name": "Racing Bulls",
+      "color": "#6692FF",
+      "abbr": "RCB",
+      "logo": "/teams/racing-bulls.png"
+    },
+    {
+      "id": "sauber",
+      "name": "Audi",
+      "color": "#52E252",
+      "abbr": "SAU",
+      "logo": "/teams/audi.png"
+    },
+    {
+      "id": "alpine",
+      "name": "Alpine",
+      "color": "#FF87BC",
+      "abbr": "ALP",
+      "logo": "/teams/alpine.png"
+    },
+    {
+      "id": "williams",
+      "name": "Williams",
+      "color": "#1868DB",
+      "abbr": "WIL",
+      "logo": "/teams/williams.png"
+    },
+    {
+      "id": "cadillac",
+      "name": "Cadillac",
+      "color": "#1D1D1B",
+      "abbr": "CAD",
+      "logo": "/teams/cadillac.png"
+    },
+    {
+      "id": "aston-martin",
+      "name": "Aston Martin",
+      "color": "#229971",
+      "abbr": "AMR",
+      "logo": "/teams/aston-martin.png"
     }
   ]
 }
