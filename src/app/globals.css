@@ -18,6 +18,11 @@ body {
   overflow: hidden;
 }
 
+/* Admin panel needs normal scroll — override the global hidden */
+body:has(.admin-page) {
+  overflow: auto;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
