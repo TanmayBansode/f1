@@ -2617,6 +2617,12 @@
       "teamColor": "#3671C6",
       "results": [
         {
+          "round": 1,
+          "position": 20,
+          "points": 0,
+          "cumulativePoints": 0
+        },
+        {
           "round": 2,
           "position": 6,
           "points": 8,
@@ -3248,6 +3254,12 @@
       "teamColor": "#1868DB",
       "results": [
         {
+          "round": 1,
+          "position": 21,
+          "points": 0,
+          "cumulativePoints": 0
+        },
+        {
           "round": 2,
           "position": 15,
           "points": 0,
@@ -3367,6 +3379,12 @@
       "teamId": "aston-martin",
       "teamColor": "#229971",
       "results": [
+          {
+          "round": 1,
+          "position": 22,
+          "points": 0,
+          "cumulativePoints": 0
+        },
         {
           "round": 2,
           "position": 17,
