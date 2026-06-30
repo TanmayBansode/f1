@@ -22,6 +22,7 @@ import {
   NodeDisplayMode,
   RaceTypeFilter,
   DisplayState,
+  ChartMode,
 } from "@/lib/types";
 
 const MARGIN = { top: 60, right: 80, bottom: 30, left: 50 };
@@ -45,6 +46,7 @@ interface BumpChartProps {
   highlightedDrivers: Set<string> | null;
   displayMode: NodeDisplayMode;
   raceTypeFilter: RaceTypeFilter;
+  chartMode: ChartMode;
   onHover: (info: HoverInfo | null) => void;
   onEventHover: (info: EventHoverInfo | null) => void;
   onSelectDriver: (driverId: string) => void;
@@ -59,7 +61,7 @@ function getDisplayState(result: RaceResult): DisplayState {
 }
 
 const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart(
-  { season, highlightedDrivers, displayMode, raceTypeFilter, onHover, onEventHover, onSelectDriver },
+  { season, highlightedDrivers, displayMode, raceTypeFilter, chartMode, onHover, onEventHover, onSelectDriver },
   ref
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -123,9 +125,18 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     };
   }, []);
 
+  // In championship mode, only show race+sprint; otherwise use the raceTypeFilter
+  const effectiveFilter = useMemo(
+    () =>
+      chartMode === "championship"
+        ? new Set<import("@/lib/types").RaceType>(["race", "sprint"])
+        : raceTypeFilter,
+    [chartMode, raceTypeFilter]
+  );
+
   const filteredRaces = useMemo(
-    () => season.races.filter((r) => raceTypeFilter.has(r.type)),
-    [season.races, raceTypeFilter]
+    () => season.races.filter((r) => effectiveFilter.has(r.type)),
+    [season.races, effectiveFilter]
   );
   const filteredRoundsList = useMemo(
     () => filteredRaces.map((r) => r.round),
@@ -135,6 +146,29 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     () => new Set(filteredRoundsList),
     [filteredRoundsList]
   );
+
+  // Championship rank map: for each filtered round, compute rank of every driver by cumulativePoints
+  const championshipRankMap = useMemo(() => {
+    if (chartMode !== "championship") return null;
+    // Map<round, Map<driverId, rank>>
+    const map = new Map<number, Map<string, number>>();
+    for (const round of filteredRoundsList) {
+      // Get cumulative points for each driver up to (and including) this round
+      const scores: { driverId: string; pts: number }[] = season.drivers.map((d) => {
+        // Sum all results for rounds <= current round that are in our filtered set
+        const pts = d.results
+          .filter((r) => filteredRounds.has(r.round) && r.round <= round)
+          .reduce((acc, r) => acc + r.points, 0);
+        return { driverId: d.id, pts };
+      });
+      // Sort descending by pts
+      scores.sort((a, b) => b.pts - a.pts);
+      const roundMap = new Map<string, number>();
+      scores.forEach(({ driverId }, idx) => roundMap.set(driverId, idx + 1));
+      map.set(round, roundMap);
+    }
+    return map;
+  }, [chartMode, filteredRoundsList, filteredRounds, season.drivers]);
 
   // Main D3 rendering
   useEffect(() => {
@@ -154,14 +188,26 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       return;
     }
 
-    const maxPosition = Math.max(
-      ...season.drivers.flatMap((d) =>
-        d.results
-          .filter((r) => r.position !== null && filteredRounds.has(r.round))
-          .map((r) => r.position!)
-      ),
-      1
-    );
+    const maxPosition = chartMode === "championship"
+      ? Math.max(
+          ...season.drivers.map((d) => {
+            // highest rank = number of drivers with any result in filtered rounds
+            const hasResult = d.results.some((r) => filteredRounds.has(r.round));
+            return hasResult ? 1 : 0;
+          }).filter(Boolean),
+          season.drivers.filter((d) =>
+            d.results.some((r) => filteredRounds.has(r.round))
+          ).length,
+          1
+        )
+      : Math.max(
+          ...season.drivers.flatMap((d) =>
+            d.results
+              .filter((r) => r.position !== null && filteredRounds.has(r.round))
+              .map((r) => r.position!)
+          ),
+          1
+        );
 
     const innerWidth = (filteredRaces.length - 1) * COL_WIDTH;
     const innerHeight = (maxPosition - 1) * ROW_HEIGHT;
@@ -410,23 +456,46 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
 
     // Line generator — positions are always numeric now, lines bridge
     // across rounds a driver didn't participate in via .defined()
-    const lineGenerator = line<RaceResult>()
-      .defined((d) => d.position !== null && filteredRounds.has(d.round))
+    const getY = (driverId: string, result: RaceResult): number | null => {
+      if (chartMode === "championship") {
+        const rank = championshipRankMap?.get(result.round)?.get(driverId);
+        return rank !== undefined ? yScale(rank) : null;
+      }
+      return result.position !== null ? yScale(result.position) : null;
+    };
+
+    const lineGenerator = line<RaceResult & { _driverId: string }>()
+      .defined((d) => {
+        if (!filteredRounds.has(d.round)) return false;
+        if (chartMode === "championship") {
+          return championshipRankMap?.get(d.round)?.has(d._driverId) ?? false;
+        }
+        return d.position !== null;
+      })
       .x((d) => xScale(d.round)!)
-      .y((d) => yScale(d.position!))
+      .y((d) => {
+        if (chartMode === "championship") {
+          return championshipRankMap?.get(d.round)?.get(d._driverId) !== undefined
+            ? yScale(championshipRankMap!.get(d.round)!.get(d._driverId)!)
+            : 0;
+        }
+        return yScale(d.position!);
+      })
       .curve(curveBumpX);
 
     const driversWithFilteredResults = season.drivers.map((d) => ({
       ...d,
-      results: d.results.filter((r) => filteredRounds.has(r.round)),
+      results: d.results
+        .filter((r) => filteredRounds.has(r.round))
+        .map((r) => ({ ...r, _driverId: d.id })),
     }));
 
     // Driver lines
-    g.selectAll<SVGPathElement, Driver>(".driver-line")
+    g.selectAll<SVGPathElement, typeof driversWithFilteredResults[0]>(".driver-line")
       .data(driversWithFilteredResults, (d) => d.id)
       .join("path")
       .attr("class", "driver-line")
-      .attr("d", (d) => lineGenerator(d.results))
+      .attr("d", (d) => lineGenerator(d.results as Parameters<typeof lineGenerator>[0]))
       .attr("fill", "none")
       .attr("stroke", (d) => d.teamColor)
       .attr("stroke-width", 2.5)
@@ -476,15 +545,25 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       }
     }
 
-    // Position nodes — now includes DNF/DSQ (they have numeric positions)
+    // Position nodes
     const dots = season.drivers.flatMap((driver) =>
       driver.results
-        .filter((r) => r.position !== null && filteredRounds.has(r.round))
+        .filter((r) => filteredRounds.has(r.round))
+        .filter((r) => {
+          if (chartMode === "championship") {
+            return championshipRankMap?.get(r.round)?.has(driver.id) ?? false;
+          }
+          return r.position !== null;
+        })
         .map((result) => {
           const race = season.races.find((r) => r.round === result.round);
+          const yPos = chartMode === "championship"
+            ? (championshipRankMap?.get(result.round)?.get(driver.id) ?? null)
+            : result.position;
           return {
             driver,
             result,
+            yPos,
             displayState: getDisplayState(result),
             raceType: (race?.type ?? "race") as
               | "race"
@@ -492,6 +571,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
               | "qualifying",
           };
         })
+        .filter((d) => d.yPos !== null)
     );
 
     const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
@@ -637,7 +717,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr(
           "transform",
           (d) =>
-            `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+            `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
         )
         .style("cursor", "pointer");
 
@@ -684,7 +764,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       attachNodeInteraction(
         nodeGroups,
         () => "", // not used — dot uses scaleElement
-        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`,
         ".node-shape"
       );
     } else if (displayMode === "code") {
@@ -696,7 +776,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr(
           "transform",
           (d) =>
-            `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+            `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
         )
         .style("cursor", "pointer");
 
@@ -756,8 +836,8 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
 
       attachNodeInteraction(
         nodeGroups,
-        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.2)`,
-        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)}) scale(1.2)`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
       );
     } else {
       // Photo mode
@@ -769,7 +849,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr(
           "transform",
           (d) =>
-            `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+            `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
         )
         .style("cursor", "pointer");
 
@@ -822,24 +902,33 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
 
       attachNodeInteraction(
         nodeGroups,
-        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.25)`,
-        (d) => `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)}) scale(1.25)`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
       );
     }
 
     // Driver end-of-line labels
-    g.selectAll<SVGGElement, Driver>(".driver-end-label")
+    g.selectAll<SVGGElement, typeof driversWithFilteredResults[0]>(".driver-end-label")
       .data(driversWithFilteredResults)
       .join("g")
       .attr("class", "driver-end-label")
       .each(function (d) {
         const lastResult = d.results
-          .filter((r) => r.position !== null)
+          .filter((r) => {
+            if (chartMode === "championship") {
+              return championshipRankMap?.get(r.round)?.has(d.id) ?? false;
+            }
+            return r.position !== null;
+          })
           .at(-1);
         if (!lastResult) return;
         const gLabel = select(this);
+        const yVal = chartMode === "championship"
+          ? (championshipRankMap?.get(lastResult.round)?.get(d.id) ?? null)
+          : lastResult.position;
+        if (yVal === null) return;
         const lx = xScale(lastResult.round)! + 20;
-        const ly = yScale(lastResult.position!);
+        const ly = yScale(yVal);
 
         gLabel
           .append("text")
@@ -850,13 +939,18 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
           .attr("font-weight", "700")
           .text(d.id);
 
+        // Show cumulative points in championship mode, else per-race pts
+        const labelPts = chartMode === "championship"
+          ? lastResult.cumulativePoints
+          : lastResult.cumulativePoints;
+
         gLabel
           .append("text")
           .attr("x", lx)
           .attr("y", ly + 12)
           .attr("fill", "#555")
           .attr("font-size", "8px")
-          .text(`${lastResult.cumulativePoints} pts`);
+          .text(`${labelPts} pts`);
       });
 
     // Apply current highlight state immediately
@@ -923,7 +1017,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     return () => {
       svg.on(".zoom", null);
     };
-  }, [season, dimensions, displayMode, filteredRaces, filteredRounds]);
+  }, [season, dimensions, displayMode, filteredRaces, filteredRounds, chartMode, championshipRankMap]);
 
   // Highlight transitions
   useEffect(() => {

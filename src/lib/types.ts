@@ -77,6 +77,8 @@ export type RaceType = "race" | "sprint" | "qualifying";
 
 export type RaceTypeFilter = Set<RaceType>;
 
+export type ChartMode = "race" | "championship";
+
 export interface EventHoverInfo {
   round: number;
   name: string;

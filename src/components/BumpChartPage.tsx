@@ -9,7 +9,7 @@ import type { BumpChartHandle } from "./BumpChart";
 import BottomBar from "./BottomBar";
 import DriverPanel from "./DriverPanel";
 import { DriverTooltip, EventTooltip } from "./Tooltip";
-import type { HoverInfo, EventHoverInfo, NodeDisplayMode, RaceType, RaceTypeFilter } from "@/lib/types";
+import type { HoverInfo, EventHoverInfo, NodeDisplayMode, RaceType, RaceTypeFilter, ChartMode } from "@/lib/types";
 
 const BumpChart = lazy(() => import("./BumpChart"));
 
@@ -85,6 +85,7 @@ export default function BumpChartPage() {
   const [driverPanelOpen, setDriverPanelOpen] = useState(false);
   const [bottomBarOpen, setBottomBarOpen] = useState(true);
   const [seasonData, setSeasonData] = useState<SeasonData>(sportCfg.defaultSeason);
+  const [chartMode, setChartMode] = useState<ChartMode>("race");
 
   // Close sport menu when clicking outside
   useEffect(() => {
@@ -377,6 +378,7 @@ export default function BumpChartPage() {
               highlightedDrivers={highlightedDrivers}
               displayMode={displayMode}
               raceTypeFilter={raceTypeFilter}
+              chartMode={chartMode}
               onHover={setHoveredNode}
               onEventHover={setHoveredEvent}
               onSelectDriver={handleToggleDriver}
@@ -386,6 +388,24 @@ export default function BumpChartPage() {
             <DriverTooltip info={hoveredNode} season={seasonData} />
           )}
           {hoveredEvent && <EventTooltip info={hoveredEvent} />}
+
+          {/* Chart mode toggle */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center bg-neutral-900/80 backdrop-blur border border-neutral-700/40 rounded-full p-0.5 shadow-xl">
+            {(["race", "championship"] as ChartMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setChartMode(mode)}
+                className="px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200"
+                style={{
+                  backgroundColor: chartMode === mode ? accentColor : "transparent",
+                  color: chartMode === mode ? "#fff" : "#555",
+                  boxShadow: chartMode === mode ? `0 2px 10px ${accentColor}50` : "none",
+                }}
+              >
+                {mode === "race" ? "Race Standings" : "Championship Standings"}
+              </button>
+            ))}
+          </div>
 
           {/* Driver panel toggle (when panel is hidden) */}
           {!driverPanelOpen && (
