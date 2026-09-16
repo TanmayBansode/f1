@@ -38,7 +38,7 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
   // Viewport-aware positioning
   const isMobileView = typeof window !== "undefined" && window.innerWidth < 640;
   const tooltipW = isMobileView ? 190 : 220;
-  const tooltipH = 180;
+  const tooltipH = 215;
   let left = info.x + 16;
   let top = info.y - 10;
 
@@ -146,10 +146,20 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
           )}
           <div className="flex-1" />
           <div className="text-right">
-            <span className="text-white font-bold text-xs">
-              {info.points}
-            </span>
-            <span className="text-neutral-500 text-[10px] ml-0.5">pts</span>
+            <div>
+              <span className="text-white font-bold text-xs">
+                {info.points}
+              </span>
+              <span className="text-neutral-500 text-[10px] ml-0.5">pts</span>
+            </div>
+            <div className="mt-1 pt-1 border-t border-neutral-800/60">
+              <span className="text-white font-black text-lg leading-none">
+                {info.cumulativePoints}
+              </span>
+              <div className="text-neutral-400 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
+                Total after round
+              </div>
+            </div>
           </div>
         </div>
       </div>
