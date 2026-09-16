@@ -1,0 +1,335 @@
+{
+  "year": 2025,
+  "races": [
+    {
+      "round": 1,
+      "name": "Thailand Grand Prix",
+      "shortName": "THA",
+      "date": "2025-02-28",
+      "type": "race",
+      "circuit": "Chang International Circuit",
+      "location": "Buriram, Thailand"
+    },
+    {
+      "round": 2,
+      "name": "Argentina Grand Prix",
+      "shortName": "ARG",
+      "date": "2025-03-29",
+      "type": "race",
+      "circuit": "Autódromo Termas de Río Hondo",
+      "location": "Santiago del Estero, Argentina"
+    },
+    {
+      "round": 3,
+      "name": "Americas Grand Prix",
+      "shortName": "AME",
+      "date": "2025-04-13",
+      "type": "race",
+      "circuit": "Circuit of The Americas",
+      "location": "Austin, United States"
+    },
+    {
+      "round": 4,
+      "name": "Spanish Grand Prix",
+      "shortName": "ESP",
+      "date": "2025-04-27",
+      "type": "race",
+      "circuit": "Circuito de Jerez – Ángel Nieto",
+      "location": "Jerez de la Frontera, Spain"
+    },
+    {
+      "round": 5,
+      "name": "French Grand Prix",
+      "shortName": "FRA",
+      "date": "2025-05-11",
+      "type": "race",
+      "circuit": "Circuit Bugatti",
+      "location": "Le Mans, France"
+    }
+  ],
+  "teams": [
+    {
+      "id": "ducati-lenovo",
+      "name": "Ducati Lenovo",
+      "color": "#CC0000",
+      "abbr": "DUC",
+      "logo": ""
+    },
+    {
+      "id": "pramac",
+      "name": "Prima Pramac",
+      "color": "#E34000",
+      "abbr": "PRM",
+      "logo": ""
+    },
+    {
+      "id": "aprilia",
+      "name": "Aprilia Racing",
+      "color": "#009EE3",
+      "abbr": "APR",
+      "logo": ""
+    },
+    {
+      "id": "ktm",
+      "name": "Red Bull KTM",
+      "color": "#FF6600",
+      "abbr": "KTM",
+      "logo": ""
+    },
+    {
+      "id": "honda",
+      "name": "Repsol Honda",
+      "color": "#CC0000",
+      "abbr": "HRC",
+      "logo": ""
+    },
+    {
+      "id": "yamaha",
+      "name": "Monster Yamaha",
+      "color": "#0033A0",
+      "abbr": "YAM",
+      "logo": ""
+    },
+    {
+      "id": "gresini",
+      "name": "Gresini Racing",
+      "color": "#FF3399",
+      "abbr": "GRS",
+      "logo": ""
+    },
+    {
+      "id": "trackhouse",
+      "name": "Trackhouse Racing",
+      "color": "#1DA462",
+      "abbr": "TRK",
+      "logo": ""
+    }
+  ],
+  "drivers": [
+    {
+      "id": "BAG",
+      "name": "Francesco Bagnaia",
+      "team": "Ducati Lenovo",
+      "teamId": "ducati-lenovo",
+      "teamColor": "#CC0000",
+      "number": 1,
+      "results": [
+        { "round": 1, "position": 1, "points": 25, "cumulativePoints": 25 },
+        { "round": 2, "position": 3, "points": 16, "cumulativePoints": 41 },
+        { "round": 3, "position": 2, "points": 20, "cumulativePoints": 61 },
+        { "round": 4, "position": 1, "points": 25, "cumulativePoints": 86 },
+        { "round": 5, "position": 4, "points": 13, "cumulativePoints": 99 }
+      ]
+    },
+    {
+      "id": "MMR",
+      "name": "Marc Márquez",
+      "team": "Ducati Lenovo",
+      "teamId": "ducati-lenovo",
+      "teamColor": "#CC0000",
+      "number": 93,
+      "results": [
+        { "round": 1, "position": 2, "points": 20, "cumulativePoints": 20 },
+        { "round": 2, "position": 1, "points": 25, "cumulativePoints": 45 },
+        { "round": 3, "position": 1, "points": 25, "cumulativePoints": 70 },
+        { "round": 4, "position": 2, "points": 20, "cumulativePoints": 90 },
+        { "round": 5, "position": 1, "points": 25, "cumulativePoints": 115 }
+      ]
+    },
+    {
+      "id": "MAR",
+      "name": "Jorge Martín",
+      "team": "Prima Pramac",
+      "teamId": "pramac",
+      "teamColor": "#E34000",
+      "number": 89,
+      "results": [
+        { "round": 1, "position": 3, "points": 16, "cumulativePoints": 16 },
+        { "round": 2, "position": 2, "points": 20, "cumulativePoints": 36 },
+        { "round": 3, "position": 4, "points": 13, "cumulativePoints": 49 },
+        { "round": 4, "position": 3, "points": 16, "cumulativePoints": 65 },
+        { "round": 5, "position": 2, "points": 20, "cumulativePoints": 85 }
+      ]
+    },
+    {
+      "id": "BEZ",
+      "name": "Fabio Di Giannantonio",
+      "team": "Prima Pramac",
+      "teamId": "pramac",
+      "teamColor": "#E34000",
+      "number": 49,
+      "results": [
+        { "round": 1, "position": 7, "points": 9, "cumulativePoints": 9 },
+        { "round": 2, "position": 8, "points": 8, "cumulativePoints": 17 },
+        { "round": 3, "position": 6, "points": 10, "cumulativePoints": 27 },
+        { "round": 4, "position": 7, "points": 9, "cumulativePoints": 36 },
+        { "round": 5, "position": 6, "points": 10, "cumulativePoints": 46 }
+      ]
+    },
+    {
+      "id": "VIN",
+      "name": "Maverick Viñales",
+      "team": "Aprilia Racing",
+      "teamId": "aprilia",
+      "teamColor": "#009EE3",
+      "number": 12,
+      "results": [
+        { "round": 1, "position": 5, "points": 11, "cumulativePoints": 11 },
+        { "round": 2, "position": 5, "points": 11, "cumulativePoints": 22 },
+        { "round": 3, "position": 5, "points": 11, "cumulativePoints": 33 },
+        { "round": 4, "position": 5, "points": 11, "cumulativePoints": 44 },
+        { "round": 5, "position": 5, "points": 11, "cumulativePoints": 55 }
+      ]
+    },
+    {
+      "id": "ESM",
+      "name": "Aleix Espargaró",
+      "team": "Aprilia Racing",
+      "teamId": "aprilia",
+      "teamColor": "#009EE3",
+      "number": 41,
+      "results": [
+        { "round": 1, "position": 6, "points": 10, "cumulativePoints": 10 },
+        { "round": 2, "position": 6, "points": 10, "cumulativePoints": 20 },
+        { "round": 3, "position": 9, "points": 7, "cumulativePoints": 27 },
+        { "round": 4, "position": 6, "points": 10, "cumulativePoints": 37 },
+        { "round": 5, "position": 8, "points": 8, "cumulativePoints": 45 }
+      ]
+    },
+    {
+      "id": "BIN",
+      "name": "Brad Binder",
+      "team": "Red Bull KTM",
+      "teamId": "ktm",
+      "teamColor": "#FF6600",
+      "number": 33,
+      "results": [
+        { "round": 1, "position": 4, "points": 13, "cumulativePoints": 13 },
+        { "round": 2, "position": 4, "points": 13, "cumulativePoints": 26 },
+        { "round": 3, "position": 7, "points": 9, "cumulativePoints": 35 },
+        { "round": 4, "position": 4, "points": 13, "cumulativePoints": 48 },
+        { "round": 5, "position": 3, "points": 16, "cumulativePoints": 64 }
+      ]
+    },
+    {
+      "id": "MIL",
+      "name": "Jack Miller",
+      "team": "Red Bull KTM",
+      "teamId": "ktm",
+      "teamColor": "#FF6600",
+      "number": 43,
+      "results": [
+        { "round": 1, "position": 10, "points": 6, "cumulativePoints": 6 },
+        { "round": 2, "position": 9, "points": 7, "cumulativePoints": 13 },
+        { "round": 3, "position": 10, "points": 6, "cumulativePoints": 19 },
+        { "round": 4, "position": 9, "points": 7, "cumulativePoints": 26 },
+        { "round": 5, "position": 10, "points": 6, "cumulativePoints": 32 }
+      ]
+    },
+    {
+      "id": "MIR",
+      "name": "Joan Mir",
+      "team": "Repsol Honda",
+      "teamId": "honda",
+      "teamColor": "#CC0000",
+      "number": 36,
+      "results": [
+        { "round": 1, "position": 12, "points": 4, "cumulativePoints": 4 },
+        { "round": 2, "position": 12, "points": 4, "cumulativePoints": 8 },
+        { "round": 3, "position": 11, "points": 5, "cumulativePoints": 13 },
+        { "round": 4, "position": 12, "points": 4, "cumulativePoints": 17 },
+        { "round": 5, "position": 11, "points": 5, "cumulativePoints": 22 }
+      ]
+    },
+    {
+      "id": "NAK",
+      "name": "Takaaki Nakagami",
+      "team": "Repsol Honda",
+      "teamId": "honda",
+      "teamColor": "#CC0000",
+      "number": 30,
+      "results": [
+        { "round": 1, "position": 14, "points": 2, "cumulativePoints": 2 },
+        { "round": 2, "position": 14, "points": 2, "cumulativePoints": 4 },
+        { "round": 3, "position": 13, "points": 3, "cumulativePoints": 7 },
+        { "round": 4, "position": 14, "points": 2, "cumulativePoints": 9 },
+        { "round": 5, "position": 14, "points": 2, "cumulativePoints": 11 }
+      ]
+    },
+    {
+      "id": "QUA",
+      "name": "Fabio Quartararo",
+      "team": "Monster Yamaha",
+      "teamId": "yamaha",
+      "teamColor": "#0033A0",
+      "number": 20,
+      "results": [
+        { "round": 1, "position": 8, "points": 8, "cumulativePoints": 8 },
+        { "round": 2, "position": 7, "points": 9, "cumulativePoints": 17 },
+        { "round": 3, "position": 8, "points": 8, "cumulativePoints": 25 },
+        { "round": 4, "position": 8, "points": 8, "cumulativePoints": 33 },
+        { "round": 5, "position": 7, "points": 9, "cumulativePoints": 42 }
+      ]
+    },
+    {
+      "id": "MOR",
+      "name": "Franco Morbidelli",
+      "team": "Monster Yamaha",
+      "teamId": "yamaha",
+      "teamColor": "#0033A0",
+      "number": 21,
+      "results": [
+        { "round": 1, "position": 11, "points": 5, "cumulativePoints": 5 },
+        { "round": 2, "position": 11, "points": 5, "cumulativePoints": 10 },
+        { "round": 3, "position": 12, "points": 4, "cumulativePoints": 14 },
+        { "round": 4, "position": 11, "points": 5, "cumulativePoints": 19 },
+        { "round": 5, "position": 12, "points": 4, "cumulativePoints": 23 }
+      ]
+    },
+    {
+      "id": "AMR",
+      "name": "Álex Márquez",
+      "team": "Gresini Racing",
+      "teamId": "gresini",
+      "teamColor": "#FF3399",
+      "number": 73,
+      "results": [
+        { "round": 1, "position": 9, "points": 7, "cumulativePoints": 7 },
+        { "round": 2, "position": 10, "points": 6, "cumulativePoints": 13 },
+        { "round": 3, "position": 3, "points": 16, "cumulativePoints": 29 },
+        { "round": 4, "position": 10, "points": 6, "cumulativePoints": 35 },
+        { "round": 5, "position": 9, "points": 7, "cumulativePoints": 42 }
+      ]
+    },
+    {
+      "id": "RAS",
+      "name": "Raúl Fernández",
+      "team": "Trackhouse Racing",
+      "teamId": "trackhouse",
+      "teamColor": "#1DA462",
+      "number": 25,
+      "results": [
+        { "round": 1, "position": 13, "points": 3, "cumulativePoints": 3 },
+        { "round": 2, "position": 13, "points": 3, "cumulativePoints": 6 },
+        { "round": 3, "position": 14, "points": 2, "cumulativePoints": 8 },
+        { "round": 4, "position": 13, "points": 3, "cumulativePoints": 11 },
+        { "round": 5, "position": 13, "points": 3, "cumulativePoints": 14 }
+      ]
+    },
+    {
+      "id": "RIN",
+      "name": "Miguel Oliveira",
+      "team": "Trackhouse Racing",
+      "teamId": "trackhouse",
+      "teamColor": "#1DA462",
+      "number": 88,
+      "results": [
+        { "round": 1, "position": 15, "points": 1, "cumulativePoints": 1 },
+        { "round": 2, "position": 15, "points": 1, "cumulativePoints": 2 },
+        { "round": 3, "position": 15, "points": 1, "cumulativePoints": 3 },
+        { "round": 4, "position": 15, "points": 1, "cumulativePoints": 4 },
+        { "round": 5, "position": 15, "points": 1, "cumulativePoints": 5 }
+      ]
+    }
+  ]
+}

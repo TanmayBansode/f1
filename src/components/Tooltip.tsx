@@ -3,7 +3,6 @@
 import { memo } from "react";
 import Image from "next/image";
 import type { HoverInfo, EventHoverInfo, SeasonData } from "@/lib/types";
-import { DRIVER_PHOTO_MAP } from "@/lib/driverPhotos";
 
 const TYPE_COLORS = {
   race: "#888",
@@ -24,7 +23,7 @@ interface DriverTooltipProps {
 
 export const DriverTooltip = memo(function DriverTooltip({ info, season }: DriverTooltipProps) {
   const driver = season.drivers.find((d) => d.id === info.driverId);
-  const photo = DRIVER_PHOTO_MAP[info.driverId];
+  const photo = driver?.photo;
   const teamColor = driver?.teamColor ?? "#888";
 
   const lastResult = driver?.results.filter((r) => r.position !== null).at(-1);
@@ -37,19 +36,20 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
     : null;
 
   // Viewport-aware positioning
-  const tooltipW = 220;
+  const isMobileView = typeof window !== "undefined" && window.innerWidth < 640;
+  const tooltipW = isMobileView ? 190 : 220;
   const tooltipH = 180;
-  let left = info.x + 20;
+  let left = info.x + 16;
   let top = info.y - 10;
 
   // Check if tooltip would overflow right edge (use parent container width estimate)
   if (typeof window !== "undefined") {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    if (left + tooltipW > vw - 16) {
-      left = info.x - tooltipW - 12;
+    if (left + tooltipW > vw - 12) {
+      left = info.x - tooltipW - 10;
     }
-    if (left < 8) left = 8;
+    if (left < 4) left = 4;
     // Vertical bounds
     if (top + tooltipH / 2 > vh - 16) {
       top = vh - tooltipH - 16;
@@ -66,7 +66,7 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
         left,
         top,
         transform: "translateY(-50%)",
-        width: 220,
+        width: tooltipW,
       }}
     >
       {/* Header with photo */}
@@ -82,7 +82,7 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
         >
           {photo ? (
             <Image
-              src={`/drivers/${photo}`}
+              src={photo}
               alt={info.driverId}
               width={36}
               height={36}
@@ -132,12 +132,16 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
           <span className="text-white font-bold text-lg">
             {info.position !== null ? `P${info.position}` : "—"}
           </span>
-          {(info.displayState === "dnf" || info.displayState === "dsq") && (
+          {(info.displayState === "dnf" || info.displayState === "dsq" || info.displayState === "dns") && (
             <span
               className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-              style={{ backgroundColor: "#E1060025", color: "#E10600" }}
+              style={{ 
+                backgroundColor: info.displayState === "dns" ? "#00000040" : "#E1060025", 
+                color: info.displayState === "dns" ? "#888" : "#E10600",
+                border: info.displayState === "dns" ? "1px solid #ffffff10" : "none"
+              }}
             >
-              {info.displayState === "dsq" ? "DSQ" : "DNF"}
+              {info.displayState === "dsq" ? "DSQ" : info.displayState === "dnf" ? "DNF" : "DNS"}
             </span>
           )}
           <div className="flex-1" />

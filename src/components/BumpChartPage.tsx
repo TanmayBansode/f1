@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import Image from "next/image";
-import { defaultSeason, loadSeason, getSeasonSync, manifest } from "../../data";
+import { defaultSeason, loadSeason, getSeasonSync, manifest as f1Manifest } from "../../data";
+import { defaultSeason as motogpDefaultSeason, loadSeason as motogpLoadSeason, getSeasonSync as motogpGetSeasonSync, manifest as motogpManifest } from "../../data/motogp";
 import type { SeasonData } from "@/lib/types";
 import type { BumpChartHandle } from "./BumpChart";
 import BottomBar from "./BottomBar";
 import DriverPanel from "./DriverPanel";
 import { DriverTooltip, EventTooltip } from "./Tooltip";
-import type { HoverInfo, EventHoverInfo, NodeDisplayMode, RaceType, RaceTypeFilter } from "@/lib/types";
+import type { HoverInfo, EventHoverInfo, NodeDisplayMode, RaceType, RaceTypeFilter, ChartMode } from "@/lib/types";
 
 const BumpChart = lazy(() => import("./BumpChart"));
 
@@ -17,6 +18,34 @@ const ALL_RACE_TYPES: RaceTypeFilter = new Set<RaceType>([
   "sprint",
   "qualifying",
 ]);
+
+type Sport = "f1" | "motogp";
+
+const SPORT_CONFIG: Record<Sport, {
+  label: string;
+  accentColor: string;
+  manifest: typeof f1Manifest;
+  defaultSeason: SeasonData;
+  loadSeason: (year: number) => Promise<SeasonData>;
+  getSeasonSync: (year: number) => SeasonData | undefined;
+}> = {
+  f1: {
+    label: "F1",
+    accentColor: "#E10600",
+    manifest: f1Manifest,
+    defaultSeason,
+    loadSeason,
+    getSeasonSync,
+  },
+  motogp: {
+    label: "MotoGP",
+    accentColor: "#C63B22",
+    manifest: motogpManifest,
+    defaultSeason: motogpDefaultSeason,
+    loadSeason: motogpLoadSeason,
+    getSeasonSync: motogpGetSeasonSync,
+  },
+};
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -39,28 +68,47 @@ function useIsMobile(breakpoint = 768) {
 export default function BumpChartPage() {
   const chartRef = useRef<BumpChartHandle>(null);
   const isMobile = useIsMobile();
-  const [activeSeason, setActiveSeason] = useState(manifest.defaultYear);
-  const [highlightedDrivers, setHighlightedDrivers] = useState<Set<
-    string
-  > | null>(null);
+
+  const [activeSport, setActiveSport] = useState<Sport>("f1");
+  const [sportMenuOpen, setSportMenuOpen] = useState(false);
+  const sportMenuRef = useRef<HTMLDivElement>(null);
+
+  const sportCfg = SPORT_CONFIG[activeSport];
+  const accentColor = sportCfg.accentColor;
+
+  const [activeSeason, setActiveSeason] = useState(sportCfg.manifest.defaultYear);
+  const [highlightedDrivers, setHighlightedDrivers] = useState<Set<string> | null>(null);
   const [hoveredNode, setHoveredNode] = useState<HoverInfo | null>(null);
   const [hoveredEvent, setHoveredEvent] = useState<EventHoverInfo | null>(null);
   const [displayMode, setDisplayMode] = useState<NodeDisplayMode>("code");
-  const [raceTypeFilter, setRaceTypeFilter] =
-    useState<RaceTypeFilter>(ALL_RACE_TYPES);
+  const [raceTypeFilter, setRaceTypeFilter] = useState<RaceTypeFilter>(ALL_RACE_TYPES);
   const [driverPanelOpen, setDriverPanelOpen] = useState(false);
   const [bottomBarOpen, setBottomBarOpen] = useState(true);
-  const [seasonData, setSeasonData] = useState<SeasonData>(defaultSeason);
+  const [seasonData, setSeasonData] = useState<SeasonData>(sportCfg.defaultSeason);
+  const [chartMode, setChartMode] = useState<ChartMode>("race");
+
+  // Close sport menu when clicking outside
+  useEffect(() => {
+    if (!sportMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (sportMenuRef.current && !sportMenuRef.current.contains(e.target as Node)) {
+        setSportMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sportMenuOpen]);
 
   // Load season data on demand
   useEffect(() => {
-    const cached = getSeasonSync(activeSeason);
+    const cfg = SPORT_CONFIG[activeSport];
+    const cached = cfg.getSeasonSync(activeSeason);
     if (cached) {
       setSeasonData(cached);
       return;
     }
-    loadSeason(activeSeason).then(setSeasonData);
-  }, [activeSeason]);
+    cfg.loadSeason(activeSeason).then(setSeasonData);
+  }, [activeSport, activeSeason]);
 
   // Open driver panel by default on desktop only
   const initializedRef = useRef(false);
@@ -70,6 +118,20 @@ export default function BumpChartPage() {
       if (!isMobile) setDriverPanelOpen(true);
     }
   }, [isMobile]);
+
+  const handleSelectSport = useCallback((sport: Sport) => {
+    if (sport === activeSport) {
+      setSportMenuOpen(false);
+      return;
+    }
+    setActiveSport(sport);
+    const cfg = SPORT_CONFIG[sport];
+    setActiveSeason(cfg.manifest.defaultYear);
+    setSeasonData(cfg.defaultSeason);
+    setHighlightedDrivers(null);
+    setRaceTypeFilter(ALL_RACE_TYPES);
+    setSportMenuOpen(false);
+  }, [activeSport]);
 
   const handleSelectSeason = useCallback((year: number) => {
     setActiveSeason(year);
@@ -138,45 +200,171 @@ export default function BumpChartPage() {
 
   return (
     <div className="h-dvh flex flex-col bg-neutral-950 text-white">
-      {/* Header bar */}
-      <div className="flex-none flex items-center justify-between px-3 sm:px-5 py-2 sm:py-2.5 border-b border-neutral-800/50 bg-[#0d0d0d]">
-        <div className="flex items-center gap-2">
-          <a
-            href="https://www.formula1.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-80 transition-opacity"
-          >
-            <Image
-              src="/f1logo.png"
-              alt="F1"
-              width={48}
-              height={20}
-              className="h-5 w-auto"
-              unoptimized
-            />
-          </a>
-          <div className="w-px h-5 bg-neutral-800" />
-          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em]">
-            Standings Tracker
-          </span>
-          <span className="text-[10px] text-neutral-700 font-medium ml-1">
-            {activeSeason}
-          </span>
+      {/* Navbar */}
+      <div className="flex-none relative z-10">
+        <div
+          className="flex items-center justify-between sm:justify-between px-3 sm:px-5 py-2 sm:py-2.5"
+          style={{
+            background: "linear-gradient(180deg, #111111f0, #0d0d0dee)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          {/* Left: Brand */}
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center sm:justify-start translate-x-3 sm:translate-x-0">
+            {/* Sport switcher anchor */}
+            <div ref={sportMenuRef} className="relative flex-none">
+              <button
+                onClick={() => setSportMenuOpen((p) => !p)}
+                className="hover:opacity-80 transition-opacity flex items-center gap-1 group"
+                title="Switch sport"
+              >
+                {activeSport === "f1" ? (
+                  <Image
+                    src="/f1logo.png"
+                    alt="F1"
+                    width={48}
+                    height={20}
+                    className="h-4 sm:h-5 w-auto"
+                    unoptimized
+                  />
+                ) : (
+                  <span
+                    className="text-[13px] sm:text-[15px] font-black tracking-widest uppercase"
+                    style={{ color: accentColor, letterSpacing: "0.15em" }}
+                  >
+                    MotoGP
+                  </span>
+                )}
+                {/* tiny chevron to hint it's clickable */}
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-neutral-600 group-hover:text-neutral-400 transition-colors mt-0.5"
+                  style={{
+                    transform: sportMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {/* Sport dropdown */}
+              {sportMenuOpen && (
+                <div
+                  className="absolute top-full left-0 mt-2 py-1 rounded-xl border border-neutral-700/50 shadow-2xl z-50 min-w-[130px] overflow-hidden"
+                  style={{
+                    background: "linear-gradient(180deg, #1a1a1a, #141414)",
+                    backdropFilter: "blur(20px)",
+                  }}
+                >
+                  {(["f1", "motogp"] as Sport[]).map((sport) => {
+                    const cfg = SPORT_CONFIG[sport];
+                    const isActive = activeSport === sport;
+                    return (
+                      <button
+                        key={sport}
+                        onClick={() => handleSelectSport(sport)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all duration-150 hover:bg-white/5"
+                        style={{
+                          backgroundColor: isActive ? `${cfg.accentColor}12` : undefined,
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full flex-none"
+                          style={{
+                            backgroundColor: cfg.accentColor,
+                            opacity: isActive ? 1 : 0.35,
+                          }}
+                        />
+                        <span
+                          className="text-[11px] font-bold tracking-wide uppercase"
+                          style={{ color: isActive ? cfg.accentColor : "#777" }}
+                        >
+                          {cfg.label}
+                        </span>
+                        {isActive && (
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="ml-auto"
+                            style={{ color: cfg.accentColor }}
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 sm:h-5 bg-neutral-700/50" />
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[13px] sm:text-[18px] font-extrabold text-neutral-400 uppercase tracking-[0.12em] sm:tracking-[0.18em]">
+                Podiums
+              </span>
+              <span
+                className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{
+                  background: `${accentColor}18`,
+                  color: accentColor,
+                  border: `1px solid ${accentColor}30`,
+                }}
+              >
+                {activeSeason}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Credits + GitHub */}
+          <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-neutral-600">
+              <span>made with</span>
+              <span className="font-bold text-neutral-400">Claude</span>
+              <span>by</span>
+              <a
+                href="https://github.com/TanmayBansode"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-neutral-400 hover:text-white transition-colors"
+              >
+                TannyBans
+              </a>
+            </div>
+            <a
+              href="https://github.com/TanmayBansode/f1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-neutral-800/50 border border-neutral-700/30 text-neutral-500 hover:text-white hover:border-neutral-500/50 transition-all duration-200 text-[10px] sm:text-[11px] font-semibold"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+              <span>Star</span>
+            </a>
+          </div>
         </div>
-        <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-neutral-600">
-          <span>made with</span>
-          <span className="font-bold text-neutral-400">Claude</span>
-          <span>by</span>
-          <a
-            href="https://github.com/TanmayBansode"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold text-neutral-400 hover:text-white transition-colors"
-          >
-            TannyBans
-          </a>
-        </div>
+        {/* Bottom glow — accent-colored per sport */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${accentColor}25, ${accentColor}40, ${accentColor}25, transparent)`,
+          }}
+        />
       </div>
 
       {/* Main area: chart + driver panel */}
@@ -190,6 +378,7 @@ export default function BumpChartPage() {
               highlightedDrivers={highlightedDrivers}
               displayMode={displayMode}
               raceTypeFilter={raceTypeFilter}
+              chartMode={chartMode}
               onHover={setHoveredNode}
               onEventHover={setHoveredEvent}
               onSelectDriver={handleToggleDriver}
@@ -200,16 +389,34 @@ export default function BumpChartPage() {
           )}
           {hoveredEvent && <EventTooltip info={hoveredEvent} />}
 
+          {/* Chart mode toggle */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center bg-neutral-900/80 backdrop-blur border border-neutral-700/40 rounded-full p-0.5 shadow-xl">
+            {(["race", "championship"] as ChartMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setChartMode(mode)}
+                className="px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200"
+                style={{
+                  backgroundColor: chartMode === mode ? accentColor : "transparent",
+                  color: chartMode === mode ? "#fff" : "#555",
+                  boxShadow: chartMode === mode ? `0 2px 10px ${accentColor}50` : "none",
+                }}
+              >
+                {mode === "race" ? "Race Standings" : "Championship Standings"}
+              </button>
+            ))}
+          </div>
+
           {/* Driver panel toggle (when panel is hidden) */}
           {!driverPanelOpen && (
             <button
               onClick={() => setDriverPanelOpen(true)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-6 h-16 rounded-l-lg bg-neutral-900/90 backdrop-blur border border-r-0 border-neutral-700/50 hover:bg-neutral-800 hover:w-7 transition-all duration-200 flex items-center justify-center text-neutral-500 hover:text-white"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-8 sm:w-6 h-20 sm:h-16 rounded-l-lg bg-neutral-900/90 backdrop-blur border border-r-0 border-neutral-700/50 hover:bg-neutral-800 hover:w-9 sm:hover:w-7 transition-all duration-200 flex items-center justify-center text-neutral-500 hover:text-white"
               title="Show driver panel"
             >
               <svg
-                width="12"
-                height="12"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -226,12 +433,12 @@ export default function BumpChartPage() {
           {!bottomBarOpen && (
             <button
               onClick={() => setBottomBarOpen(true)}
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 z-30 h-6 w-16 rounded-t-lg bg-neutral-900/90 backdrop-blur border border-b-0 border-neutral-700/50 hover:bg-neutral-800 hover:h-7 transition-all duration-200 flex items-center justify-center text-neutral-500 hover:text-white"
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 z-30 h-8 sm:h-6 w-20 sm:w-16 rounded-t-lg bg-neutral-900/90 backdrop-blur border border-b-0 border-neutral-700/50 hover:bg-neutral-800 hover:h-9 sm:hover:h-7 transition-all duration-200 flex items-center justify-center text-neutral-500 hover:text-white"
               title="Show controls"
             >
               <svg
-                width="12"
-                height="12"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -291,7 +498,7 @@ export default function BumpChartPage() {
       >
         <BottomBar
           season={seasonData}
-          availableYears={manifest.years}
+          availableYears={sportCfg.manifest.years}
           activeSeason={activeSeason}
           highlightedDrivers={highlightedDrivers}
           displayMode={displayMode}

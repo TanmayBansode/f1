@@ -13,7 +13,7 @@ import { scalePoint, scaleLinear } from "d3-scale";
 import { line, curveBumpX } from "d3-shape";
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from "d3-zoom";
 import "d3-transition";
-import type {
+import {
   SeasonData,
   Driver,
   RaceResult,
@@ -22,8 +22,8 @@ import type {
   NodeDisplayMode,
   RaceTypeFilter,
   DisplayState,
+  ChartMode,
 } from "@/lib/types";
-import { DRIVER_PHOTO_MAP } from "@/lib/driverPhotos";
 
 const MARGIN = { top: 60, right: 80, bottom: 30, left: 50 };
 const ROW_HEIGHT = 36;
@@ -46,6 +46,7 @@ interface BumpChartProps {
   highlightedDrivers: Set<string> | null;
   displayMode: NodeDisplayMode;
   raceTypeFilter: RaceTypeFilter;
+  chartMode: ChartMode;
   onHover: (info: HoverInfo | null) => void;
   onEventHover: (info: EventHoverInfo | null) => void;
   onSelectDriver: (driverId: string) => void;
@@ -54,12 +55,13 @@ interface BumpChartProps {
 function getDisplayState(result: RaceResult): DisplayState {
   if (result.status === "DSQ") return "dsq";
   if (result.status === "DNF") return "dnf";
+  if (result.status === "DNS") return "dns";
   if (result.position === null) return "bench";
   return "racing";
 }
 
 const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart(
-  { season, highlightedDrivers, displayMode, raceTypeFilter, onHover, onEventHover, onSelectDriver },
+  { season, highlightedDrivers, displayMode, raceTypeFilter, chartMode, onHover, onEventHover, onSelectDriver },
   ref
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -123,9 +125,18 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     };
   }, []);
 
+  // In championship mode, only show race+sprint; otherwise use the raceTypeFilter
+  const effectiveFilter = useMemo(
+    () =>
+      chartMode === "championship"
+        ? new Set<import("@/lib/types").RaceType>(["race", "sprint"])
+        : raceTypeFilter,
+    [chartMode, raceTypeFilter]
+  );
+
   const filteredRaces = useMemo(
-    () => season.races.filter((r) => raceTypeFilter.has(r.type)),
-    [season.races, raceTypeFilter]
+    () => season.races.filter((r) => effectiveFilter.has(r.type)),
+    [season.races, effectiveFilter]
   );
   const filteredRoundsList = useMemo(
     () => filteredRaces.map((r) => r.round),
@@ -135,6 +146,29 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     () => new Set(filteredRoundsList),
     [filteredRoundsList]
   );
+
+  // Championship rank map: for each filtered round, compute rank of every driver by cumulativePoints
+  const championshipRankMap = useMemo(() => {
+    if (chartMode !== "championship") return null;
+    // Map<round, Map<driverId, rank>>
+    const map = new Map<number, Map<string, number>>();
+    for (const round of filteredRoundsList) {
+      // Get cumulative points for each driver up to (and including) this round
+      const scores: { driverId: string; pts: number }[] = season.drivers.map((d) => {
+        // Sum all results for rounds <= current round that are in our filtered set
+        const pts = d.results
+          .filter((r) => filteredRounds.has(r.round) && r.round <= round)
+          .reduce((acc, r) => acc + r.points, 0);
+        return { driverId: d.id, pts };
+      });
+      // Sort descending by pts
+      scores.sort((a, b) => b.pts - a.pts);
+      const roundMap = new Map<string, number>();
+      scores.forEach(({ driverId }, idx) => roundMap.set(driverId, idx + 1));
+      map.set(round, roundMap);
+    }
+    return map;
+  }, [chartMode, filteredRoundsList, filteredRounds, season.drivers]);
 
   // Main D3 rendering
   useEffect(() => {
@@ -154,14 +188,26 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       return;
     }
 
-    const maxPosition = Math.max(
-      ...season.drivers.flatMap((d) =>
-        d.results
-          .filter((r) => r.position !== null && filteredRounds.has(r.round))
-          .map((r) => r.position!)
-      ),
-      1
-    );
+    const maxPosition = chartMode === "championship"
+      ? Math.max(
+          ...season.drivers.map((d) => {
+            // highest rank = number of drivers with any result in filtered rounds
+            const hasResult = d.results.some((r) => filteredRounds.has(r.round));
+            return hasResult ? 1 : 0;
+          }).filter(Boolean),
+          season.drivers.filter((d) =>
+            d.results.some((r) => filteredRounds.has(r.round))
+          ).length,
+          1
+        )
+      : Math.max(
+          ...season.drivers.flatMap((d) =>
+            d.results
+              .filter((r) => r.position !== null && filteredRounds.has(r.round))
+              .map((r) => r.position!)
+          ),
+          1
+        );
 
     const innerWidth = (filteredRaces.length - 1) * COL_WIDTH;
     const innerHeight = (maxPosition - 1) * ROW_HEIGHT;
@@ -179,7 +225,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     const defs = svg.append("defs");
     if (displayMode === "photo") {
       season.drivers.forEach((driver) => {
-        const photoFile = DRIVER_PHOTO_MAP[driver.id];
+        const photoPath = driver.photo;
         const patternId = `photo-${driver.id}`;
         const pattern = defs
           .append("pattern")
@@ -188,10 +234,10 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
           .attr("height", 1)
           .attr("patternContentUnits", "objectBoundingBox");
 
-        if (photoFile) {
+        if (photoPath) {
           pattern
             .append("image")
-            .attr("href", `/drivers/${photoFile}`)
+            .attr("href", photoPath)
             .attr("width", 1)
             .attr("height", 1)
             .attr("preserveAspectRatio", "xMidYMid slice");
@@ -410,23 +456,46 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
 
     // Line generator — positions are always numeric now, lines bridge
     // across rounds a driver didn't participate in via .defined()
-    const lineGenerator = line<RaceResult>()
-      .defined((d) => d.position !== null && filteredRounds.has(d.round))
+    const getY = (driverId: string, result: RaceResult): number | null => {
+      if (chartMode === "championship") {
+        const rank = championshipRankMap?.get(result.round)?.get(driverId);
+        return rank !== undefined ? yScale(rank) : null;
+      }
+      return result.position !== null ? yScale(result.position) : null;
+    };
+
+    const lineGenerator = line<RaceResult & { _driverId: string }>()
+      .defined((d) => {
+        if (!filteredRounds.has(d.round)) return false;
+        if (chartMode === "championship") {
+          return championshipRankMap?.get(d.round)?.has(d._driverId) ?? false;
+        }
+        return d.position !== null;
+      })
       .x((d) => xScale(d.round)!)
-      .y((d) => yScale(d.position!))
+      .y((d) => {
+        if (chartMode === "championship") {
+          return championshipRankMap?.get(d.round)?.get(d._driverId) !== undefined
+            ? yScale(championshipRankMap!.get(d.round)!.get(d._driverId)!)
+            : 0;
+        }
+        return yScale(d.position!);
+      })
       .curve(curveBumpX);
 
     const driversWithFilteredResults = season.drivers.map((d) => ({
       ...d,
-      results: d.results.filter((r) => filteredRounds.has(r.round)),
+      results: d.results
+        .filter((r) => filteredRounds.has(r.round))
+        .map((r) => ({ ...r, _driverId: d.id })),
     }));
 
     // Driver lines
-    g.selectAll<SVGPathElement, Driver>(".driver-line")
+    g.selectAll<SVGPathElement, typeof driversWithFilteredResults[0]>(".driver-line")
       .data(driversWithFilteredResults, (d) => d.id)
       .join("path")
       .attr("class", "driver-line")
-      .attr("d", (d) => lineGenerator(d.results))
+      .attr("d", (d) => lineGenerator(d.results as Parameters<typeof lineGenerator>[0]))
       .attr("fill", "none")
       .attr("stroke", (d) => d.teamColor)
       .attr("stroke-width", 2.5)
@@ -476,15 +545,25 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       }
     }
 
-    // Position nodes — now includes DNF/DSQ (they have numeric positions)
+    // Position nodes
     const dots = season.drivers.flatMap((driver) =>
       driver.results
-        .filter((r) => r.position !== null && filteredRounds.has(r.round))
+        .filter((r) => filteredRounds.has(r.round))
+        .filter((r) => {
+          if (chartMode === "championship") {
+            return championshipRankMap?.get(r.round)?.has(driver.id) ?? false;
+          }
+          return r.position !== null;
+        })
         .map((result) => {
           const race = season.races.find((r) => r.round === result.round);
+          const yPos = chartMode === "championship"
+            ? (championshipRankMap?.get(result.round)?.get(driver.id) ?? null)
+            : result.position;
           return {
             driver,
             result,
+            yPos,
             displayState: getDisplayState(result),
             raceType: (race?.type ?? "race") as
               | "race"
@@ -492,10 +571,16 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
               | "qualifying",
           };
         })
+        .filter((d) => d.yPos !== null)
     );
 
-    const hoverHandler = (
-      event: MouseEvent,
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    let longPressFired = false;
+
+    const showTooltip = (
+      clientX: number,
+      clientY: number,
       d: {
         driver: Driver;
         result: RaceResult;
@@ -506,8 +591,8 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       const container = containerRef.current;
       if (!container) return;
       const rect = container.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
       const race = season.races.find((r) => r.round === d.result.round);
       onHoverRef.current({
         driverId: d.driver.id,
@@ -525,8 +610,102 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
       });
     };
 
-    const hoverLeave = () => {
+    const hideTooltip = () => {
       onHoverRef.current(null);
+    };
+
+    const clearLongPress = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+
+    // Shared function to attach all interaction handlers to any node group
+    const attachNodeInteraction = (
+      nodeGroups: ReturnType<typeof g.selectAll<SVGGElement, (typeof dots)[0]>>,
+      scaleUpTransform: (d: (typeof dots)[0]) => string,
+      defaultTransform: (d: (typeof dots)[0]) => string,
+      scaleElement?: string // e.g. ".node-shape" for dot mode
+    ) => {
+      // Desktop: hover shows tooltip, mouseleave hides
+      nodeGroups
+        .on("mouseenter", function (event, d) {
+          if (isTouchDevice) return; // skip on touch — handled by long press
+          if (scaleElement) {
+            select(this)
+              .select(scaleElement)
+              .transition().duration(100)
+              .attr("transform", "scale(1.3)");
+          } else {
+            select(this)
+              .transition().duration(100)
+              .attr("transform", scaleUpTransform(d));
+          }
+          showTooltip(event.clientX, event.clientY, d);
+        })
+        .on("mouseleave", function (_, d) {
+          if (isTouchDevice) return;
+          if (scaleElement) {
+            select(this)
+              .select(scaleElement)
+              .transition().duration(100)
+              .attr("transform", "scale(1)");
+          } else {
+            select(this)
+              .transition().duration(100)
+              .attr("transform", defaultTransform(d));
+          }
+          hideTooltip();
+        })
+        .on("click", function (_, d) {
+          // On touch devices, tap = select driver (no tooltip)
+          // On desktop, click = select driver (tooltip already showing from hover)
+          if (isTouchDevice && longPressFired) {
+            // Long press just fired — don't also select
+            longPressFired = false;
+            return;
+          }
+          onSelectDriverRef.current(d.driver.id);
+        });
+
+      // Touch: long press shows tooltip
+      if (isTouchDevice) {
+        nodeGroups.each(function (d) {
+          const el = this as SVGGElement;
+
+          el.addEventListener("touchstart", function (e) {
+            longPressFired = false;
+            const touch = e.touches[0];
+            longPressTimer = setTimeout(() => {
+              longPressFired = true;
+              showTooltip(touch.clientX, touch.clientY, d);
+              // Vibrate if supported
+              if (navigator.vibrate) navigator.vibrate(30);
+            }, 400);
+          }, { passive: true });
+
+          el.addEventListener("touchmove", function () {
+            clearLongPress();
+          }, { passive: true });
+
+          el.addEventListener("touchend", function () {
+            clearLongPress();
+            // Dismiss tooltip after a delay if it was shown
+            if (longPressFired) {
+              setTimeout(() => {
+                hideTooltip();
+                longPressFired = false;
+              }, 1500);
+            }
+          }, { passive: true });
+
+          el.addEventListener("touchcancel", function () {
+            clearLongPress();
+            hideTooltip();
+          }, { passive: true });
+        });
+      }
     };
 
     if (displayMode === "dot") {
@@ -538,7 +717,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr(
           "transform",
           (d) =>
-            `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+            `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
         )
         .style("cursor", "pointer");
 
@@ -550,7 +729,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr("stroke", "#0a0a0a")
         .attr("stroke-width", 2);
 
-      // DNF/DSQ cross overlay
+      // DNF/DSQ cross overlay (Red)
       nodeGroups
         .filter((d) => d.displayState === "dnf" || d.displayState === "dsq")
         .each(function () {
@@ -566,26 +745,28 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
             .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
 
+      // DNS cross overlay (Black)
       nodeGroups
-        .on("mouseenter", function (event, d) {
-          select(this)
-            .select(".node-shape")
-            .transition()
-            .duration(100)
-            .attr("transform", "scale(1.3)");
-          hoverHandler(event, d);
-        })
-        .on("mouseleave", function () {
-          select(this)
-            .select(".node-shape")
-            .transition()
-            .duration(100)
-            .attr("transform", "scale(1)");
-          hoverLeave();
-        })
-        .on("click", function (_, d) {
-          onSelectDriverRef.current(d.driver.id);
+        .filter((d) => d.displayState === "dns")
+        .each(function () {
+          const s = 6;
+          const el = select(this);
+          el.append("line")
+            .attr("x1", -s).attr("y1", -s).attr("x2", s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
+          el.append("line")
+            .attr("x1", s).attr("y1", -s).attr("x2", -s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
+
+      attachNodeInteraction(
+        nodeGroups,
+        () => "", // not used — dot uses scaleElement
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`,
+        ".node-shape"
+      );
     } else if (displayMode === "code") {
       const nodeGroups = g
         .selectAll<SVGGElement, (typeof dots)[0]>(".driver-node")
@@ -595,7 +776,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr(
           "transform",
           (d) =>
-            `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+            `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
         )
         .style("cursor", "pointer");
 
@@ -621,7 +802,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr("letter-spacing", "0.5px")
         .text((d) => d.driver.id);
 
-      // DNF/DSQ cross overlay
+      // DNF/DSQ cross overlay (Red)
       nodeGroups
         .filter((d) => d.displayState === "dnf" || d.displayState === "dsq")
         .each(function () {
@@ -637,30 +818,27 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
             .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
 
+      // DNS cross overlay (Black)
       nodeGroups
-        .on("mouseenter", function (event, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.2)`
-            );
-          hoverHandler(event, d);
-        })
-        .on("mouseleave", function (_, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
-            );
-          hoverLeave();
-        })
-        .on("click", function (_, d) {
-          onSelectDriverRef.current(d.driver.id);
+        .filter((d) => d.displayState === "dns")
+        .each(function () {
+          const s = 8;
+          const el = select(this);
+          el.append("line")
+            .attr("x1", -s).attr("y1", -s).attr("x2", s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
+          el.append("line")
+            .attr("x1", s).attr("y1", -s).attr("x2", -s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
+
+      attachNodeInteraction(
+        nodeGroups,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)}) scale(1.2)`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
+      );
     } else {
       // Photo mode
       const nodeGroups = g
@@ -671,7 +849,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr(
           "transform",
           (d) =>
-            `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
+            `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
         )
         .style("cursor", "pointer");
 
@@ -690,7 +868,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
         .attr("fill", (d) => `url(#photo-${d.driver.id})`)
         .attr("stroke", "none");
 
-      // DNF/DSQ cross overlay
+      // DNF/DSQ cross overlay (Red)
       nodeGroups
         .filter((d) => d.displayState === "dnf" || d.displayState === "dsq")
         .each(function () {
@@ -706,45 +884,51 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
             .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
 
+      // DNS cross overlay (Black)
       nodeGroups
-        .on("mouseenter", function (event, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)}) scale(1.25)`
-            );
-          hoverHandler(event, d);
-        })
-        .on("mouseleave", function (_, d) {
-          select(this)
-            .transition()
-            .duration(100)
-            .attr(
-              "transform",
-              `translate(${xScale(d.result.round)!},${yScale(d.result.position!)})`
-            );
-          hoverLeave();
-        })
-        .on("click", function (_, d) {
-          onSelectDriverRef.current(d.driver.id);
+        .filter((d) => d.displayState === "dns")
+        .each(function () {
+          const s = 9;
+          const el = select(this);
+          el.append("line")
+            .attr("x1", -s).attr("y1", -s).attr("x2", s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
+          el.append("line")
+            .attr("x1", s).attr("y1", -s).attr("x2", -s).attr("y2", s)
+            .attr("stroke", "#000").attr("stroke-width", 2.5)
+            .attr("stroke-linecap", "round").attr("pointer-events", "none");
         });
+
+      attachNodeInteraction(
+        nodeGroups,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)}) scale(1.25)`,
+        (d) => `translate(${xScale(d.result.round)!},${yScale(d.yPos!)})`
+      );
     }
 
     // Driver end-of-line labels
-    g.selectAll<SVGGElement, Driver>(".driver-end-label")
+    g.selectAll<SVGGElement, typeof driversWithFilteredResults[0]>(".driver-end-label")
       .data(driversWithFilteredResults)
       .join("g")
       .attr("class", "driver-end-label")
       .each(function (d) {
         const lastResult = d.results
-          .filter((r) => r.position !== null)
+          .filter((r) => {
+            if (chartMode === "championship") {
+              return championshipRankMap?.get(r.round)?.has(d.id) ?? false;
+            }
+            return r.position !== null;
+          })
           .at(-1);
         if (!lastResult) return;
         const gLabel = select(this);
+        const yVal = chartMode === "championship"
+          ? (championshipRankMap?.get(lastResult.round)?.get(d.id) ?? null)
+          : lastResult.position;
+        if (yVal === null) return;
         const lx = xScale(lastResult.round)! + 20;
-        const ly = yScale(lastResult.position!);
+        const ly = yScale(yVal);
 
         gLabel
           .append("text")
@@ -755,13 +939,18 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
           .attr("font-weight", "700")
           .text(d.id);
 
+        // Show cumulative points in championship mode, else per-race pts
+        const labelPts = chartMode === "championship"
+          ? lastResult.cumulativePoints
+          : lastResult.cumulativePoints;
+
         gLabel
           .append("text")
           .attr("x", lx)
           .attr("y", ly + 12)
           .attr("fill", "#555")
           .attr("font-size", "8px")
-          .text(`${lastResult.cumulativePoints} pts`);
+          .text(`${labelPts} pts`);
       });
 
     // Apply current highlight state immediately
@@ -828,7 +1017,7 @@ const BumpChart = forwardRef<BumpChartHandle, BumpChartProps>(function BumpChart
     return () => {
       svg.on(".zoom", null);
     };
-  }, [season, dimensions, displayMode, filteredRaces, filteredRounds]);
+  }, [season, dimensions, displayMode, filteredRaces, filteredRounds, chartMode, championshipRankMap]);
 
   // Highlight transitions
   useEffect(() => {

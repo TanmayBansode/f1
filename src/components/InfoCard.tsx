@@ -3,29 +3,6 @@
 import Image from "next/image";
 import type { Driver, SeasonData } from "@/lib/types";
 
-const DRIVER_PHOTO_MAP: Record<string, string | null> = {
-  VER: "ver.png", NOR: "nor.png", LEC: "lec.png", HAM: "ham.png",
-  PIA: "pia.png", RUS: "rus.png", ANT: "ant.png", SAI: "sai.png",
-  ALO: "alo.png", STR: "str.png", GAS: "gas.png", DOO: null,
-  TSU: null, HAD: "had.png", HUL: "hul.png", BOR: "bor.png",
-  ALB: "alb.png", PER: "per.png", BEA: "bea.png", OCO: null,
-  COL: "col.png", LAW: "law.png", BOT: null, LIN: null,
-};
-
-const TEAM_LOGO_MAP: Record<string, string> = {
-  "red-bull": "/teams/red-bull.png",
-  mclaren: "/teams/mclaren.png",
-  ferrari: "/teams/ferrari.png",
-  mercedes: "/teams/mercedes.png",
-  "aston-martin": "/teams/aston-martin.png",
-  alpine: "/teams/alpine.png",
-  williams: "/teams/williams.png",
-  "racing-bulls": "/teams/racing-bulls.png",
-  sauber: "/teams/audi.png",
-  haas: "/teams/haas.png",
-  cadillac: "/teams/cadillac.png",
-};
-
 export type InfoCardData =
   | { type: "driver"; driverId: string }
   | { type: "team"; teamId: string }
@@ -47,12 +24,16 @@ export default function InfoCard({ data, season, onClose }: InfoCardProps) {
   }
 
   const teamDrivers = season.drivers.filter((d) => d.teamId === data.teamId);
-  if (teamDrivers.length === 0) return null;
+  const teamMeta = season.teams?.find((t) => t.id === data.teamId);
+  
+  if (teamDrivers.length === 0 && !teamMeta) return null;
+
   return (
     <TeamCard
       teamId={data.teamId}
-      teamName={teamDrivers[0].team}
-      teamColor={teamDrivers[0].teamColor}
+      teamName={teamMeta?.name ?? teamDrivers[0]?.team ?? "Unknown Team"}
+      teamColor={teamMeta?.color ?? teamDrivers[0]?.teamColor ?? "#888"}
+      teamLogo={teamMeta?.logo}
       drivers={teamDrivers}
       onClose={onClose}
     />
@@ -66,11 +47,13 @@ function DriverCard({
   driver: Driver;
   onClose: () => void;
 }) {
-  const photo = DRIVER_PHOTO_MAP[driver.id];
+  const photo = driver.photo;
   const lastResult = driver.results.filter((r) => r.position !== null).at(-1);
-  const bestPos = Math.min(
-    ...driver.results.filter((r) => r.position !== null).map((r) => r.position!)
-  );
+  const bestPos = driver.results.some((r) => r.position !== null)
+    ? Math.min(
+        ...driver.results.filter((r) => r.position !== null).map((r) => r.position!)
+      )
+    : "-";
   const totalPoints = lastResult?.cumulativePoints ?? 0;
 
   return (
@@ -92,7 +75,7 @@ function DriverCard({
       >
         {photo ? (
           <Image
-            src={`/drivers/${photo}`}
+            src={photo}
             alt={driver.name}
             width={90}
             height={90}
@@ -161,7 +144,7 @@ function DriverCard({
           </div>
           <div className="flex items-center justify-center gap-1">
             {driver.results
-              .filter((r) => r.position !== null)
+              .filter((r) => r.position !== null || r.status)
               .slice(-6)
               .map((r) => (
                 <span
@@ -169,14 +152,22 @@ function DriverCard({
                   className="w-7 h-6 rounded text-[9px] font-bold flex items-center justify-center"
                   style={{
                     backgroundColor:
-                      r.position! <= 3
+                      r.status === "DNS"
+                        ? "#000"
+                        : (r.status === "DNF" || r.status === "DSQ")
+                        ? "#E1060030"
+                        : r.position! <= 3
                         ? `${driver.teamColor}30`
                         : "#1a1a1a",
                     color:
-                      r.position! <= 3 ? driver.teamColor : "#777",
+                      r.status === "DNS"
+                        ? "#555"
+                        : (r.status === "DNF" || r.status === "DSQ")
+                        ? "#E10600"
+                        : r.position! <= 3 ? driver.teamColor : "#777",
                   }}
                 >
-                  {r.position}
+                  {r.status || r.position}
                 </span>
               ))}
           </div>
@@ -190,16 +181,17 @@ function TeamCard({
   teamId,
   teamName,
   teamColor,
+  teamLogo,
   drivers,
   onClose,
 }: {
   teamId: string;
   teamName: string;
   teamColor: string;
+  teamLogo?: string;
   drivers: Driver[];
   onClose: () => void;
 }) {
-  const logo = TEAM_LOGO_MAP[teamId];
   const totalPoints = drivers.reduce((sum, d) => {
     const last = d.results.filter((r) => r.position !== null).at(-1);
     return sum + (last?.cumulativePoints ?? 0);
@@ -221,9 +213,9 @@ function TeamCard({
           background: `linear-gradient(135deg, ${teamColor}30, ${teamColor}08)`,
         }}
       >
-        {logo ? (
+        {teamLogo ? (
           <Image
-            src={logo}
+            src={teamLogo}
             alt={teamName}
             width={60}
             height={40}
@@ -235,7 +227,7 @@ function TeamCard({
             className="text-2xl font-black"
             style={{ color: teamColor }}
           >
-            {teamName}
+            {teamName.slice(0, 3).toUpperCase()}
           </div>
         )}
       </div>
@@ -254,7 +246,6 @@ function TeamCard({
         {/* Drivers in team */}
         <div className="mt-3 pt-3 border-t border-neutral-800/60 space-y-2">
           {drivers.map((driver) => {
-            const photo = DRIVER_PHOTO_MAP[driver.id];
             const lastResult = driver.results
               .filter((r) => r.position !== null)
               .at(-1);
@@ -263,9 +254,9 @@ function TeamCard({
                 key={driver.id}
                 className="flex items-center gap-2.5 p-1.5 rounded-lg bg-neutral-800/30"
               >
-                {photo ? (
+                {driver.photo ? (
                   <Image
-                    src={`/drivers/${photo}`}
+                    src={driver.photo}
                     alt={driver.name}
                     width={32}
                     height={32}

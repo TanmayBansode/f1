@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, memo } from "react";
+import { useMemo, memo, useEffect, useState } from "react";
 import Image from "next/image";
 import type { SeasonData } from "@/lib/types";
-import { DRIVER_PHOTO_MAP } from "@/lib/driverPhotos";
 
 interface DriverPanelProps {
   season: SeasonData;
@@ -17,7 +16,18 @@ interface TeamGroup {
   teamId: string;
   name: string;
   color: string;
-  drivers: { id: string; name: string; number: number; teamColor: string }[];
+  drivers: { id: string; name: string; number: number; teamColor: string; photo?: string }[];
+}
+
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [breakpoint]);
+  return isMobile;
 }
 
 export default memo(function DriverPanel({
@@ -27,6 +37,8 @@ export default memo(function DriverPanel({
   isOpen,
   onToggle,
 }: DriverPanelProps) {
+  const isMobile = useIsMobile();
+
   const teamGroups = useMemo(() => {
     const groups = new Map<string, TeamGroup>();
     for (const driver of season.drivers) {
@@ -45,6 +57,7 @@ export default memo(function DriverPanel({
         name: driver.name,
         number: driver.number,
         teamColor: driver.teamColor,
+        photo: driver.photo,
       });
     }
     return Array.from(groups.values());
@@ -56,20 +69,25 @@ export default memo(function DriverPanel({
   const isActive = (driverId: string) =>
     highlightedDrivers === null || highlightedDrivers.has(driverId);
 
+  const panelWidth = isMobile ? 220 : 256;
+
   return (
     <div
-      className="flex-none transition-all duration-300 ease-in-out overflow-hidden"
-      style={{ width: isOpen ? 256 : 0 }}
+      className="flex-none h-full transition-all duration-300 ease-in-out overflow-hidden"
+      style={{ width: isOpen ? panelWidth : 0 }}
     >
-      <div className="w-64 h-full flex flex-col bg-[#0d0d0d]/95 backdrop-blur-xl border-l border-neutral-800/50">
+      <div
+        className="h-full flex flex-col bg-[#0d0d0d]/95 backdrop-blur-xl border-l border-neutral-800/50"
+        style={{ width: panelWidth }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800/40">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-neutral-800/40">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500">
             Drivers
           </span>
           <button
             onClick={onToggle}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-600 hover:text-white hover:bg-neutral-800 transition-all duration-150"
+            className="w-7 h-7 sm:w-6 sm:h-6 rounded-md flex items-center justify-center text-neutral-600 hover:text-white hover:bg-neutral-800 transition-all duration-150"
             title="Hide driver panel"
           >
             <svg
@@ -88,17 +106,20 @@ export default memo(function DriverPanel({
         </div>
 
         {/* Driver list */}
-        <div className="flex-1 overflow-y-auto driver-panel-scroll px-2 py-2">
+        <div
+          className="flex-1 overflow-y-auto driver-panel-scroll px-1.5 sm:px-2 py-1.5 sm:py-2"
+          style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+        >
           {teamGroups.map((group) => (
-            <div key={group.teamId} className="mb-3">
+            <div key={group.teamId} className="mb-2 sm:mb-3">
               {/* Team header */}
-              <div className="flex items-center gap-2 px-2 mb-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 mb-1 sm:mb-1.5">
                 <div
                   className="w-0.5 h-3 rounded-full"
                   style={{ backgroundColor: group.color }}
                 />
                 <span
-                  className="text-[9px] font-bold uppercase tracking-wider"
+                  className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider"
                   style={{ color: `${group.color}AA` }}
                 >
                   {group.name}
@@ -110,13 +131,12 @@ export default memo(function DriverPanel({
                 {group.drivers.map((driver) => {
                   const selected = isSelected(driver.id);
                   const active = isActive(driver.id);
-                  const photo = DRIVER_PHOTO_MAP[driver.id];
 
                   return (
                     <button
                       key={driver.id}
                       onClick={() => onToggleDriver(driver.id)}
-                      className="driver-row flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer group"
+                      className="driver-row flex items-center gap-2 sm:gap-2.5 px-1.5 sm:px-2 py-1.5 sm:py-1.5 rounded-lg cursor-pointer group"
                       style={{
                         backgroundColor: selected
                           ? `${driver.teamColor}18`
@@ -127,16 +147,16 @@ export default memo(function DriverPanel({
                     >
                       {/* Photo / Fallback */}
                       <div
-                        className="w-7 h-7 rounded-full flex-none overflow-hidden flex items-center justify-center border"
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex-none overflow-hidden flex items-center justify-center border"
                         style={{
                           borderColor: selected
                             ? driver.teamColor
                             : `${driver.teamColor}40`,
                         }}
                       >
-                        {photo ? (
+                        {driver.photo ? (
                           <Image
-                            src={`/drivers/${photo}`}
+                            src={driver.photo}
                             alt={driver.id}
                             width={28}
                             height={28}
@@ -145,7 +165,7 @@ export default memo(function DriverPanel({
                           />
                         ) : (
                           <span
-                            className="text-[8px] font-black"
+                            className="text-[7px] sm:text-[8px] font-black"
                             style={{ color: driver.teamColor }}
                           >
                             {driver.id}
@@ -154,23 +174,23 @@ export default memo(function DriverPanel({
                       </div>
 
                       {/* Name + Number */}
-                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                      <div className="flex-1 flex items-center gap-1.5 sm:gap-2 min-w-0">
                         <span
-                          className="text-xs font-bold truncate"
+                          className="text-[11px] sm:text-xs font-bold truncate"
                           style={{
                             color: active ? "#fff" : "#666",
                           }}
                         >
                           {driver.id}
                         </span>
-                        <span className="text-[10px] text-neutral-600 font-medium">
+                        <span className="text-[9px] sm:text-[10px] text-neutral-600 font-medium">
                           #{driver.number}
                         </span>
                       </div>
 
-                      {/* Full name on right, truncated */}
+                      {/* Full name on right, truncated — hidden on mobile */}
                       <span
-                        className="text-[9px] font-medium truncate max-w-[80px] text-right"
+                        className="hidden sm:inline text-[9px] font-medium truncate max-w-[80px] text-right"
                         style={{
                           color: active ? `${driver.teamColor}90` : "#444",
                         }}
