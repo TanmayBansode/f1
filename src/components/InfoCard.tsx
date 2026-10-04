@@ -198,7 +198,10 @@ function TeamCard({
   }, 0);
 
   return (
-    <div className="absolute right-4 top-4 w-56 bg-neutral-900/95 backdrop-blur-md border border-neutral-800 rounded-xl overflow-hidden shadow-2xl z-40">
+    <div
+      data-team-id={teamId}
+      className="absolute right-4 top-4 w-56 bg-neutral-900/95 backdrop-blur-md border border-neutral-800 rounded-xl overflow-hidden shadow-2xl z-40"
+    >
       <button
         onClick={onClose}
         className="absolute top-2 right-2 w-5 h-5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-500 hover:text-white text-[10px] z-10 transition-colors"

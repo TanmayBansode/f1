@@ -10,6 +10,7 @@ import BottomBar from "./BottomBar";
 import DriverPanel from "./DriverPanel";
 import { DriverTooltip, EventTooltip } from "./Tooltip";
 import type { HoverInfo, EventHoverInfo, NodeDisplayMode, RaceType, RaceTypeFilter, ChartMode } from "@/lib/types";
+import { useIsMobile } from "@/lib/use-is-mobile";
 
 const BumpChart = lazy(() => import("./BumpChart"));
 
@@ -47,27 +48,9 @@ const SPORT_CONFIG: Record<Sport, {
   },
 };
 
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    const check = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => setIsMobile(window.innerWidth < breakpoint), 150);
-    };
-    setIsMobile(window.innerWidth < breakpoint);
-    window.addEventListener("resize", check);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", check);
-    };
-  }, [breakpoint]);
-  return isMobile;
-}
-
 export default function BumpChartPage() {
   const chartRef = useRef<BumpChartHandle>(null);
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(768);
 
   const [activeSport, setActiveSport] = useState<Sport>("f1");
   const [sportMenuOpen, setSportMenuOpen] = useState(false);
@@ -82,7 +65,12 @@ export default function BumpChartPage() {
   const [hoveredEvent, setHoveredEvent] = useState<EventHoverInfo | null>(null);
   const [displayMode, setDisplayMode] = useState<NodeDisplayMode>("code");
   const [raceTypeFilter, setRaceTypeFilter] = useState<RaceTypeFilter>(ALL_RACE_TYPES);
-  const [driverPanelOpen, setDriverPanelOpen] = useState(false);
+  
+  // Declarative panel open states: desktop open by default, mobile closed by default
+  const [desktopPanelClosed, setDesktopPanelClosed] = useState(false);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+  const driverPanelOpen = isMobile ? mobilePanelOpen : !desktopPanelClosed;
+
   const [bottomBarOpen, setBottomBarOpen] = useState(true);
   const [seasonData, setSeasonData] = useState<SeasonData>(sportCfg.defaultSeason);
   const [chartMode, setChartMode] = useState<ChartMode>("race");
@@ -98,26 +86,6 @@ export default function BumpChartPage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [sportMenuOpen]);
-
-  // Load season data on demand
-  useEffect(() => {
-    const cfg = SPORT_CONFIG[activeSport];
-    const cached = cfg.getSeasonSync(activeSeason);
-    if (cached) {
-      setSeasonData(cached);
-      return;
-    }
-    cfg.loadSeason(activeSeason).then(setSeasonData);
-  }, [activeSport, activeSeason]);
-
-  // Open driver panel by default on desktop only
-  const initializedRef = useRef(false);
-  useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      if (!isMobile) setDriverPanelOpen(true);
-    }
-  }, [isMobile]);
 
   const handleSelectSport = useCallback((sport: Sport) => {
     if (sport === activeSport) {
@@ -136,7 +104,16 @@ export default function BumpChartPage() {
   const handleSelectSeason = useCallback((year: number) => {
     setActiveSeason(year);
     setHighlightedDrivers(null);
-  }, []);
+    const cfg = SPORT_CONFIG[activeSport];
+    const cached = cfg.getSeasonSync(year);
+    if (cached) {
+      setSeasonData(cached);
+    } else {
+      cfg.loadSeason(year).then((data) => {
+        setSeasonData(data);
+      });
+    }
+  }, [activeSport]);
 
   const handleToggleDriver = useCallback((driverId: string) => {
     setHighlightedDrivers((prev) => {
@@ -151,6 +128,10 @@ export default function BumpChartPage() {
       next.add(driverId);
       return next;
     });
+  }, []);
+
+  const handleClearHighlight = useCallback(() => {
+    setHighlightedDrivers(null);
   }, []);
 
   const handleToggleTeam = useCallback(
@@ -198,24 +179,40 @@ export default function BumpChartPage() {
     chartRef.current?.centerView();
   }, []);
 
+  const handleZoomIn = useCallback(() => {
+    chartRef.current?.zoomIn();
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    chartRef.current?.zoomOut();
+  }, []);
+
+  const handleToggleDriverPanel = useCallback(() => {
+    if (isMobile) {
+      setMobilePanelOpen((p) => !p);
+    } else {
+      setDesktopPanelClosed((p) => !p);
+    }
+  }, [isMobile]);
+
   return (
-    <div className="h-dvh flex flex-col bg-neutral-950 text-white">
+    <div className="h-dvh flex flex-col bg-neutral-950 text-white select-none">
       {/* Navbar */}
-      <div className="flex-none relative z-10">
+      <header className="flex-none relative z-30">
         <div
-          className="flex items-center justify-between sm:justify-between px-3 sm:px-5 py-2 sm:py-2.5"
+          className="flex items-center justify-between px-3 sm:px-5 py-2 sm:py-2.5"
           style={{
             background: "linear-gradient(180deg, #111111f0, #0d0d0dee)",
             backdropFilter: "blur(12px)",
           }}
         >
-          {/* Left: Brand */}
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center sm:justify-start translate-x-3 sm:translate-x-0">
+          {/* Left: Brand + Sport switcher */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-none">
             {/* Sport switcher anchor */}
             <div ref={sportMenuRef} className="relative flex-none">
               <button
                 onClick={() => setSportMenuOpen((p) => !p)}
-                className="hover:opacity-80 transition-opacity flex items-center gap-1 group"
+                className="hover:opacity-80 transition-opacity flex items-center gap-1 group py-1"
                 title="Switch sport"
               >
                 {activeSport === "f1" ? (
@@ -235,7 +232,7 @@ export default function BumpChartPage() {
                     MotoGP
                   </span>
                 )}
-                {/* tiny chevron to hint it's clickable */}
+                {/* tiny chevron */}
                 <svg
                   width="10"
                   height="10"
@@ -245,7 +242,7 @@ export default function BumpChartPage() {
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-neutral-600 group-hover:text-neutral-400 transition-colors mt-0.5"
+                  className="text-neutral-500 group-hover:text-neutral-300 transition-colors mt-0.5"
                   style={{
                     transform: sportMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
                     transition: "transform 0.2s ease",
@@ -312,9 +309,10 @@ export default function BumpChartPage() {
               )}
             </div>
 
-            <div className="w-px h-4 sm:h-5 bg-neutral-700/50" />
+            <div className="w-px h-4 sm:h-5 bg-neutral-700/50 flex-none" />
+            
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[13px] sm:text-[18px] font-extrabold text-neutral-400 uppercase tracking-[0.12em] sm:tracking-[0.18em]">
+              <span className="text-[13px] sm:text-[17px] font-extrabold text-neutral-300 uppercase tracking-[0.12em] sm:tracking-[0.16em]">
                 Podiums
               </span>
               <span
@@ -330,9 +328,30 @@ export default function BumpChartPage() {
             </div>
           </div>
 
+          {/* Center (Desktop): Chart mode toggle — placed safely in navbar to avoid covering chart labels */}
+          <div className="hidden md:flex items-center bg-neutral-900/90 border border-neutral-700/50 rounded-full p-0.5 shadow-lg">
+            {(["race", "championship"] as ChartMode[]).map((mode) => {
+              const active = chartMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setChartMode(mode)}
+                  className="px-3.5 py-1 rounded-full text-[11px] font-bold transition-all duration-200"
+                  style={{
+                    backgroundColor: active ? accentColor : "transparent",
+                    color: active ? "#fff" : "#777",
+                    boxShadow: active ? `0 2px 10px ${accentColor}40` : "none",
+                  }}
+                >
+                  {mode === "race" ? "Race Standings" : "Championship Standings"}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Right: Credits + GitHub */}
-          <div className="hidden sm:flex items-center gap-2 sm:gap-3">
-            <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-neutral-600">
+          <div className="flex items-center gap-2 sm:gap-3 flex-none">
+            <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-neutral-500">
               <span>made with</span>
               <span className="font-bold text-neutral-400">Claude</span>
               <span>by</span>
@@ -349,7 +368,7 @@ export default function BumpChartPage() {
               href="https://github.com/TanmayBansode/f1"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-neutral-800/50 border border-neutral-700/30 text-neutral-500 hover:text-white hover:border-neutral-500/50 transition-all duration-200 text-[10px] sm:text-[11px] font-semibold"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-800/60 border border-neutral-700/40 text-neutral-400 hover:text-white hover:border-neutral-500/50 transition-all duration-200 text-[10px] sm:text-[11px] font-semibold"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
@@ -358,20 +377,51 @@ export default function BumpChartPage() {
             </a>
           </div>
         </div>
+
+        {/* Mobile Sub-header: Chart Mode Toggle */}
+        <div className="flex md:hidden items-center justify-center py-1.5 px-3 bg-neutral-900/60 border-t border-neutral-800/50">
+          <div className="flex items-center bg-neutral-900/90 border border-neutral-700/40 rounded-full p-0.5 shadow-md">
+            {(["race", "championship"] as ChartMode[]).map((mode) => {
+              const active = chartMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setChartMode(mode)}
+                  className="px-3 py-0.5 rounded-full text-[10px] font-bold transition-all duration-200"
+                  style={{
+                    backgroundColor: active ? accentColor : "transparent",
+                    color: active ? "#fff" : "#777",
+                  }}
+                >
+                  {mode === "race" ? "Race Standings" : "Championship"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Bottom glow — accent-colored per sport */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-px"
+          className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
           style={{
             background: `linear-gradient(90deg, transparent, ${accentColor}25, ${accentColor}40, ${accentColor}25, transparent)`,
           }}
         />
-      </div>
+      </header>
 
       {/* Main area: chart + driver panel */}
       <div className="flex-1 flex flex-row overflow-hidden relative">
         {/* Chart container */}
         <div className="flex-1 overflow-hidden relative">
-          <Suspense fallback={<div className="w-full h-full bg-neutral-950 flex items-center justify-center"><span className="text-neutral-600 text-sm">Loading chart...</span></div>}>
+          <Suspense
+            fallback={
+              <div className="w-full h-full bg-neutral-950 flex items-center justify-center">
+                <span className="text-neutral-500 text-sm font-medium animate-pulse">
+                  Loading season visualization...
+                </span>
+              </div>
+            }
+          >
             <BumpChart
               ref={chartRef}
               season={seasonData}
@@ -384,35 +434,46 @@ export default function BumpChartPage() {
               onSelectDriver={handleToggleDriver}
             />
           </Suspense>
+
+          {/* Interactive Tooltips */}
           {hoveredNode && (
             <DriverTooltip info={hoveredNode} season={seasonData} />
           )}
           {hoveredEvent && <EventTooltip info={hoveredEvent} />}
 
-          {/* Chart mode toggle */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center bg-neutral-900/80 backdrop-blur border border-neutral-700/40 rounded-full p-0.5 shadow-xl">
-            {(["race", "championship"] as ChartMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setChartMode(mode)}
-                className="px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200"
-                style={{
-                  backgroundColor: chartMode === mode ? accentColor : "transparent",
-                  color: chartMode === mode ? "#fff" : "#555",
-                  boxShadow: chartMode === mode ? `0 2px 10px ${accentColor}50` : "none",
-                }}
-              >
-                {mode === "race" ? "Race Standings" : "Championship Standings"}
-              </button>
-            ))}
+          {/* Floating Camera & Zoom Controls HUD */}
+          <div className="absolute bottom-4 right-4 z-20 flex items-center bg-neutral-900/90 backdrop-blur-md border border-neutral-700/60 rounded-xl p-1 shadow-2xl gap-0.5">
+            <button
+              onClick={handleZoomIn}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-800/80 active:scale-95 transition-all text-base font-bold"
+              title="Zoom In (Ctrl + Scroll)"
+            >
+              +
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-800/80 active:scale-95 transition-all text-base font-bold"
+              title="Zoom Out (Ctrl + Scroll)"
+            >
+              −
+            </button>
+            <div className="w-px h-4 bg-neutral-700/60 my-auto mx-0.5" />
+            <button
+              onClick={handleCenterView}
+              className="px-2 h-7 rounded-lg flex items-center gap-1 text-neutral-400 hover:text-white hover:bg-neutral-800/80 active:scale-95 transition-all text-[11px] font-bold"
+              title="Fit entire season to view"
+            >
+              <span>⊞</span>
+              <span className="hidden sm:inline">Fit</span>
+            </button>
           </div>
 
           {/* Driver panel toggle (when panel is hidden) */}
           {!driverPanelOpen && (
             <button
-              onClick={() => setDriverPanelOpen(true)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-8 sm:w-6 h-20 sm:h-16 rounded-l-lg bg-neutral-900/90 backdrop-blur border border-r-0 border-neutral-700/50 hover:bg-neutral-800 hover:w-9 sm:hover:w-7 transition-all duration-200 flex items-center justify-center text-neutral-500 hover:text-white"
-              title="Show driver panel"
+              onClick={handleToggleDriverPanel}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 sm:w-6 h-18 sm:h-16 rounded-l-lg bg-neutral-900/90 backdrop-blur border border-r-0 border-neutral-700/50 hover:bg-neutral-800 hover:w-8 sm:hover:w-7 transition-all duration-200 flex items-center justify-center text-neutral-400 hover:text-white shadow-xl"
+              title="Show driver list"
             >
               <svg
                 width="14"
@@ -433,8 +494,8 @@ export default function BumpChartPage() {
           {!bottomBarOpen && (
             <button
               onClick={() => setBottomBarOpen(true)}
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 z-30 h-8 sm:h-6 w-20 sm:w-16 rounded-t-lg bg-neutral-900/90 backdrop-blur border border-b-0 border-neutral-700/50 hover:bg-neutral-800 hover:h-9 sm:hover:h-7 transition-all duration-200 flex items-center justify-center text-neutral-500 hover:text-white"
-              title="Show controls"
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 h-7 sm:h-6 w-20 sm:w-16 rounded-t-lg bg-neutral-900/90 backdrop-blur border border-b-0 border-neutral-700/50 hover:bg-neutral-800 hover:h-8 sm:hover:h-7 transition-all duration-200 flex items-center justify-center text-neutral-400 hover:text-white shadow-xl"
+              title="Show controls & teams"
             >
               <svg
                 width="14"
@@ -456,26 +517,25 @@ export default function BumpChartPage() {
         {isMobile ? (
           <>
             {/* Backdrop */}
-            {driverPanelOpen && (
+            {mobilePanelOpen && (
               <div
-                className="absolute inset-0 bg-black/50 z-40"
-                onClick={() => setDriverPanelOpen(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-xs z-40"
+                onClick={() => setMobilePanelOpen(false)}
               />
             )}
             <div
               className="absolute top-0 right-0 h-full z-50 transition-transform duration-300 ease-in-out"
               style={{
-                transform: driverPanelOpen
-                  ? "translateX(0)"
-                  : "translateX(100%)",
+                transform: mobilePanelOpen ? "translateX(0)" : "translateX(100%)",
               }}
             >
               <DriverPanel
                 season={seasonData}
                 highlightedDrivers={highlightedDrivers}
                 onToggleDriver={handleToggleDriver}
+                onClearHighlight={handleClearHighlight}
                 isOpen={true}
-                onToggle={() => setDriverPanelOpen(false)}
+                onToggle={() => setMobilePanelOpen(false)}
               />
             </div>
           </>
@@ -484,8 +544,9 @@ export default function BumpChartPage() {
             season={seasonData}
             highlightedDrivers={highlightedDrivers}
             onToggleDriver={handleToggleDriver}
-            isOpen={driverPanelOpen}
-            onToggle={() => setDriverPanelOpen((p) => !p)}
+            onClearHighlight={handleClearHighlight}
+            isOpen={!desktopPanelClosed}
+            onToggle={() => setDesktopPanelClosed((p) => !p)}
           />
         )}
       </div>
@@ -503,6 +564,7 @@ export default function BumpChartPage() {
           highlightedDrivers={highlightedDrivers}
           displayMode={displayMode}
           raceTypeFilter={raceTypeFilter}
+          chartMode={chartMode}
           onSelectSeason={handleSelectSeason}
           onToggleTeam={handleToggleTeam}
           onSetDisplayMode={setDisplayMode}

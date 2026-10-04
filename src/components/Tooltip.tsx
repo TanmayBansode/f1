@@ -35,28 +35,28 @@ export const DriverTooltip = memo(function DriverTooltip({ info, season }: Drive
       )
     : null;
 
-  // Viewport-aware positioning
-  const isMobileView = typeof window !== "undefined" && window.innerWidth < 640;
+  // Container-aware positioning
+  const containerW = info.containerWidth || (typeof window !== "undefined" ? window.innerWidth : 800);
+  const containerH = info.containerHeight || (typeof window !== "undefined" ? window.innerHeight : 600);
+  const isMobileView = containerW < 640;
   const tooltipW = isMobileView ? 190 : 220;
-  const tooltipH = 215;
-  let left = info.x + 16;
-  let top = info.y - 10;
+  const tooltipH = 220;
 
-  // Check if tooltip would overflow right edge (use parent container width estimate)
-  if (typeof window !== "undefined") {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (left + tooltipW > vw - 12) {
-      left = info.x - tooltipW - 10;
-    }
-    if (left < 4) left = 4;
-    // Vertical bounds
-    if (top + tooltipH / 2 > vh - 16) {
-      top = vh - tooltipH - 16;
-    }
-    if (top - tooltipH / 2 < 8) {
-      top = tooltipH / 2 + 8;
-    }
+  // Try placing to the right of node, flip to left if overflowing
+  let left = info.x + 18;
+  if (left + tooltipW > containerW - 10) {
+    left = Math.max(8, info.x - tooltipW - 14);
+  } else {
+    left = Math.max(8, left);
+  }
+
+  // Vertical positioning centered on node, clamped within container
+  let top = info.y;
+  const halfH = tooltipH / 2;
+  if (top - halfH < 10) {
+    top = halfH + 10;
+  } else if (top + halfH > containerH - 10) {
+    top = Math.max(halfH + 10, containerH - halfH - 10);
   }
 
   return (
@@ -204,17 +204,40 @@ interface EventTooltipProps {
 }
 
 export const EventTooltip = memo(function EventTooltip({ info }: EventTooltipProps) {
-  const left = info.x + 16;
-  const top = info.y + 12;
+  const containerW = info.containerWidth || (typeof window !== "undefined" ? window.innerWidth : 800);
+  const containerH = info.containerHeight || (typeof window !== "undefined" ? window.innerHeight : 600);
+  const tooltipW = 190;
+  const tooltipH = 95;
+
+  let left = info.x + 16;
+  if (left + tooltipW > containerW - 10) {
+    left = Math.max(8, info.x - tooltipW - 12);
+  } else {
+    left = Math.max(8, left);
+  }
+
+  let top = info.y + 12;
+  if (top + tooltipH > containerH - 10) {
+    top = Math.max(8, info.y - tooltipH - 8);
+  } else {
+    top = Math.max(8, top);
+  }
+
   const color = TYPE_COLORS[info.type];
 
-  const formattedDate = info.date
-    ? new Date(info.date + "T00:00:00").toLocaleDateString("en-US", {
+  let formattedDate = "";
+  if (info.date) {
+    // Handle both YYYY-MM-DD and YYYY-M-D
+    const parts = info.date.split("-").map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      formattedDate = d.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
-      })
-    : "";
+      });
+    }
+  }
 
   return (
     <div

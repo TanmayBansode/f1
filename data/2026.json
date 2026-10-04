@@ -5,7 +5,7 @@
       "round": 1,
       "name": "Australian Grand Prix Qualifying",
       "shortName": "AUS-Q",
-      "date": "2026-03-7",
+      "date": "2026-03-07",
       "type": "qualifying",
       "circuit": "Albert Park Circuit",
       "location": "Melbourne, Australia"
@@ -14,7 +14,7 @@
       "round": 2,
       "name": "Australian Grand Prix",
       "shortName": "AUS",
-      "date": "2026-03-8",
+      "date": "2026-03-08",
       "type": "race",
       "circuit": "Albert Park Circuit",
       "location": "Melbourne, Australia"

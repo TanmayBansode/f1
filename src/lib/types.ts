@@ -69,6 +69,9 @@ export interface HoverInfo {
   cumulativePoints: number;
   x: number;
   y: number;
+  /** Size of the chart container the x/y coordinates are relative to. */
+  containerWidth: number;
+  containerHeight: number;
 }
 
 export type NodeDisplayMode = "photo" | "code" | "dot";
@@ -88,4 +91,6 @@ export interface EventHoverInfo {
   location?: string;
   x: number;
   y: number;
+  containerWidth: number;
+  containerHeight: number;
 }
