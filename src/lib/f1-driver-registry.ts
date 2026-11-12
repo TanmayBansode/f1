@@ -45,11 +45,16 @@ export const DRIVERS: DriverInfo[] = [
   { id: "BOT", name: "Valtteri Bottas", number: 77, team: "Cadillac", teamId: "cadillac", teamColor: "#1D1D1B", photo: "/drivers/bot.png" },
   { id: "TSU", name: "Yuki Tsunoda", number: 22, team: "Racing Bulls", teamId: "racing-bulls", teamColor: "#6692FF", photo: "/drivers/tsu.png" },
   { id: "HIR", name: "Ryo Hirakawa", number: 50, team: "Haas", teamId: "haas", teamColor: "#B6BABD", photo: "/drivers/hir.png" },
+  { id: "CAM", name: "Rafael Câmara", number: 51, team: "Haas", teamId: "haas", teamColor: "#B6BABD", photo: "/drivers/cam.png" },
 ];
 
 // All known name variants the F1 website may use → driverId
 const NAME_VARIANTS: Record<string, string> = {
   // Canonical
+  "Rafael Câmara": "CAM",
+  "Rafael Camara": "CAM",
+  "R. Câmara": "CAM",
+  "R. Camara": "CAM",
   "Yuki Tsunoda": "TSU",
   "Y. Tsunoda": "TSU",
   "Ryo Hirakawa": "HIR",
